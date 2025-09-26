@@ -1,4 +1,7 @@
-scrapers
 .venv
 .vscode
 __pycache__
+.gitignore
+test_html/
+archive/
+webscraping
