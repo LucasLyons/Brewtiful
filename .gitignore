@@ -5,3 +5,4 @@ __pycache__
 test_html/
 archive/
 webscraping
+.vercel
