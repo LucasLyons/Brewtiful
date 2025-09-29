@@ -24,10 +24,16 @@ export async function updateSession(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
-    await supabase.auth.signInAnonymously()
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) {
+      console.error('Anonymous sign-in failed:', error)
+    }
+    // Refresh the session to trigger cookie setting
+    await supabase.auth.getSession()
   }
+
 
   return supabaseResponse
 }
