@@ -23,9 +23,7 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Keep this for session refresh - don't remove
   await supabase.auth.getUser()
 
-  // No redirect logic - handle protection per page
   return supabaseResponse
 }
