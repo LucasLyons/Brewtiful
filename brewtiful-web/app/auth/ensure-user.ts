@@ -6,6 +6,6 @@ export async function ensureUser() {
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
-        supabase.auth.signInAnonymously()
+        await supabase.auth.signInAnonymously()
     }
 }
