@@ -11,7 +11,7 @@ export async function AuthButton() {
 
   const user = data?.claims;
 
-  return user ? (
+  return user && !user.is_anonymous ? (
     <div className="flex items-center gap-4">
       Hey, {user.email}!
       <LogoutButton />
