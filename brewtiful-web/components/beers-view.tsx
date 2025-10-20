@@ -63,7 +63,7 @@ export function BeersView({ beers }: BeersViewProps) {
   return (
     <>
       {/* Header Section with Search and View Toggle */}
-      <div className="mb-8 flex items-start gap-4">
+      <div className="mb-8 flex items-center gap-4">
         <div className="flex-1">
           <BeerSearch />
         </div>
