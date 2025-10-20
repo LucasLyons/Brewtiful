@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { BreweriesView } from '@/components/breweries-view';
 import { BreweriesPageLayout } from '@/components/breweries-page-layout';
+import { BreweriesPagination } from '@/components/breweries-pagination';
 import { BrewerySortOption, SortDirection } from '@/components/brewery-filters-sidebar';
 
 const ITEMS_PER_PAGE = 24;
@@ -168,6 +169,8 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
     )
   ).sort() as string[];
 
+  const totalPages = count ? Math.ceil(count / ITEMS_PER_PAGE) : 1;
+
   return (
     <BreweriesPageLayout
       availableCountries={availableCountries}
@@ -180,6 +183,10 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
       <BreweriesView breweries={breweries} />
+      <BreweriesPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
     </BreweriesPageLayout>
   );
 }
