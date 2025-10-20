@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { BeerCard } from "./beer-card";
 import { BeerTable } from "./beer-table";
-import { ViewToggle, ViewMode } from "./view-toggle";
+import { ViewMode, ViewToggle } from "./view-toggle";
+import { BeerSearch } from "./beer-search";
 
 interface Beer {
   beer_id: string;
@@ -39,12 +40,6 @@ export function BeersView({ beers }: BeersViewProps) {
       <>
         {/* Header Section */}
         <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Discover Beers</h1>
-            <p className="text-muted-foreground">
-              Explore {beers.length.toLocaleString()} craft beers from around the world
-            </p>
-          </div>
           {/* Skeleton for View Toggle */}
           <div className="h-10 w-[180px] bg-muted/50 rounded-lg animate-pulse" />
         </div>
@@ -67,13 +62,10 @@ export function BeersView({ beers }: BeersViewProps) {
 
   return (
     <>
-      {/* Header Section with View Toggle */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Discover Beers</h1>
-          <p className="text-muted-foreground">
-            Explore {beers.length.toLocaleString()} craft beers from around the world
-          </p>
+      {/* Header Section with Search and View Toggle */}
+      <div className="mb-8 flex items-start gap-4">
+        <div className="flex-1">
+          <BeerSearch />
         </div>
         <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
       </div>
