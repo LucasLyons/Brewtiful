@@ -139,7 +139,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
 
   // Apply sorting
   let orderColumn: string;
-  let orderAscending = sortDirection === 'asc';
+  const orderAscending = sortDirection === 'asc';
 
   switch (sortBy) {
     case 'name':
@@ -250,11 +250,22 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
 
   // Now apply style filter client-side to determine what options are actually available
   // (brewery and location are already applied at database level)
-  let availableBeersForOptions = allOptionsBeers || [];
+  interface BeerWithBrewery {
+    style: string;
+    brewery: {
+      name: string;
+      country?: string;
+    } | {
+      name: string;
+      country?: string;
+    }[];
+  }
+
+  let availableBeersForOptions: BeerWithBrewery[] = allOptionsBeers || [];
 
   // Apply style filter client-side
   if (filterStyles.length > 0) {
-    availableBeersForOptions = availableBeersForOptions.filter((b: any) =>
+    availableBeersForOptions = availableBeersForOptions.filter((b) =>
       filterStyles.includes(b.style)
     );
   }
@@ -263,19 +274,19 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   const availableBreweries = Array.from(
     new Set(
       availableBeersForOptions
-        ?.map((b: any) => (Array.isArray(b.brewery) ? b.brewery[0]?.name : b.brewery?.name))
+        ?.map((b) => (Array.isArray(b.brewery) ? b.brewery[0]?.name : b.brewery?.name))
         .filter(Boolean) || []
     )
   ).sort() as string[];
 
   const availableStyles = Array.from(
-    new Set(availableBeersForOptions?.map((b: any) => b.style).filter(Boolean) || [])
+    new Set(availableBeersForOptions?.map((b) => b.style).filter(Boolean) || [])
   ).sort() as string[];
 
   const availableLocations = Array.from(
     new Set(
       availableBeersForOptions
-        ?.map((b: any) => (Array.isArray(b.brewery) ? b.brewery[0]?.country : b.brewery?.country))
+        ?.map((b) => (Array.isArray(b.brewery) ? b.brewery[0]?.country : b.brewery?.country))
         .filter(Boolean) || []
     )
   ).sort() as string[];
