@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import BrewtifulLogo from "@/components/brewtiful-logo"
+import { NavigationTabs } from "@/components/navigation-tabs";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic'
@@ -42,9 +43,12 @@ export default async function RootLayout({
         >
           <div className="min-h-screen w-full flex flex-col items-center">
           <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-            <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-              <div className="flex gap-5 items-center font-semibold">
-                {<BrewtifulLogo />}
+            <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
+              <div className="flex gap-6 items-center">
+                <div className="font-semibold">
+                  {<BrewtifulLogo />}
+                </div>
+                <NavigationTabs />
               </div>
               <div className="flex gap-4 items-center">
                 {<AuthButton />}
