@@ -30,8 +30,8 @@ export function BeerFiltersSidebar({
   const searchParams = useSearchParams();
 
   // Sort state
-  const [sortBy, setSortBy] = useState<SortOption>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortBy, setSortBy] = useState<SortOption>("popularity");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   // Filter state
   const [selectedBreweries, setSelectedBreweries] = useState<string[]>([]);
