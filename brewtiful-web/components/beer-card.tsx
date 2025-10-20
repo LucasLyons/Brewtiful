@@ -24,7 +24,7 @@ function TruncatedText({
   className?: string;
   as?: "div" | "span";
 }) {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement & HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function TruncatedText({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Component ref={ref as any} className={`${className} cursor-help`}>
+          <Component ref={ref} className={`${className} cursor-help`}>
             {children}
           </Component>
         </TooltipTrigger>
@@ -49,7 +49,7 @@ function TruncatedText({
     );
   }
 
-  return <Component ref={ref as any} className={className}>{children}</Component>;
+  return <Component ref={ref} className={className}>{children}</Component>;
 }
 
 export function BeerCard({
