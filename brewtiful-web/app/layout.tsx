@@ -46,7 +46,10 @@ export default async function RootLayout({
               <div className="flex gap-5 items-center font-semibold">
                 {<BrewtifulLogo />}
               </div>
-              {<AuthButton />}
+              <div className="flex gap-4 items-center">
+                {<AuthButton />}
+                <ThemeSwitcher/>
+              </div>
             </div>
           </nav>
           <main className="flex-1 w-full flex flex-col items-center">
@@ -64,7 +67,6 @@ export default async function RootLayout({
                 Supabase
               </a>
             </p>
-            <ThemeSwitcher />
           </footer>
         </div>
           <Analytics />

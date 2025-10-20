@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { BeerCard } from '@/components/beer-card';
+import { BeersView } from '@/components/beers-view';
 
 export default async function BeersPage() {
   const supabase = await createClient();
@@ -35,28 +35,7 @@ export default async function BeersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Discover Beers</h1>
-        <p className="text-muted-foreground">
-          Explore {beers.length.toLocaleString()} craft beers from around the world
-        </p>
-      </div>
-
-      {/* Responsive Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {beers.map((beer) => (
-          <BeerCard
-            key={beer.beer_id}
-            name={beer.name}
-            brewery={beer.brewery.name}
-            style={beer.style}
-            abv={beer.abv}
-            location={beer.brewery.country}
-            description={beer.description}
-          />
-        ))}
-      </div>
+      <BeersView beers={beers} />
     </div>
   );
 }

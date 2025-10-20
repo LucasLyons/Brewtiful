@@ -20,7 +20,7 @@ export function BeerCard({
   description 
 }: BeerCardProps) {
   return (
-    <Card className="flex flex-col h-full hover:shadow-lg transition-shadow">
+    <Card className="flex flex-col h-full hover:shadow-lg dark:hover:bg-white/5 transition-all">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-xl line-clamp-2">{name}</CardTitle>
