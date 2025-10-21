@@ -296,10 +296,10 @@ export function BreweryFiltersSidebar({
           </div>
         )}
 
-        {/* Province/State Filter */}
+        {/* State Filter */}
         {availableProvinceOrStates.length > 0 && (
           <div className="space-y-2">
-            <Label className="text-sm">Province/State ({availableProvinceOrStates.length})</Label>
+            <Label className="text-sm">State ({availableProvinceOrStates.length})</Label>
             <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
               {availableProvinceOrStates.map((provinceOrState) => (
                 <div key={provinceOrState} className="flex items-center space-x-2">

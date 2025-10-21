@@ -36,6 +36,7 @@ export function BreweriesView({ breweries }: BreweriesViewProps) {
         {breweries.map((brewery) => (
           <BreweryListItem
             key={brewery.brewery_id}
+            breweryId={brewery.brewery_id}
             name={brewery.name}
             country={brewery.country}
             provinceOrState={brewery.province_or_state}

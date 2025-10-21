@@ -8,6 +8,7 @@ import { BeerSearch } from "./beer-search";
 
 interface Beer {
   beer_id: string;
+  brewery_id: number;
   name: string;
   style: string;
   abv?: number;
@@ -78,6 +79,7 @@ export function BeersView({ beers }: BeersViewProps) {
               key={beer.beer_id}
               name={beer.name}
               brewery={beer.brewery.name}
+              breweryId={beer.brewery_id}
               style={beer.style}
               abv={beer.abv}
               location={beer.brewery.country}

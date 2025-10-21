@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import { Beer, MapPin, Star } from "lucide-react";
 interface BeerCardProps {
   name: string;
   brewery: string;
+  breweryId: number;
   style: string;
   abv?: number;
   location?: string;
@@ -55,6 +57,7 @@ function TruncatedText({
 export function BeerCard({
   name,
   brewery,
+  breweryId,
   style,
   abv,
   location,
@@ -74,7 +77,13 @@ export function BeerCard({
           </div>
           <CardDescription className="flex items-center gap-1 min-w-0">
             <Beer className="h-4 w-4 shrink-0" />
-            <TruncatedText as="span" className="truncate">{brewery}</TruncatedText>
+            <Link
+              href={`/breweries/${breweryId}`}
+              className="truncate hover:text-primary hover:underline transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TruncatedText as="span" className="truncate">{brewery}</TruncatedText>
+            </Link>
           </CardDescription>
         </CardHeader>
 

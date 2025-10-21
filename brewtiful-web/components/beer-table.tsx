@@ -2,6 +2,7 @@ import { BeerListItem } from "./beer-list-item";
 
 interface Beer {
   beer_id: string;
+  brewery_id: number;
   name: string;
   style: string;
   abv?: number;
@@ -36,6 +37,7 @@ export function BeerTable({ beers }: BeerTableProps) {
             key={beer.beer_id}
             name={beer.name}
             brewery={beer.brewery.name}
+            breweryId={beer.brewery_id}
             style={beer.style}
             abv={beer.abv}
             location={beer.brewery.country}

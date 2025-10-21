@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Building2 } from "lucide-react";
 
 interface BreweryListItemProps {
+  breweryId: string;
   name: string;
   country?: string;
   provinceOrState?: string;
@@ -49,6 +51,7 @@ function TruncatedText({
 }
 
 export function BreweryListItem({
+  breweryId,
   name,
   country,
   provinceOrState,
@@ -56,12 +59,15 @@ export function BreweryListItem({
 }: BreweryListItemProps) {
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+      <Link
+        href={`/breweries/${breweryId}`}
+        className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0 cursor-pointer"
+      >
         {/* Name */}
         <div className="col-span-3 flex items-center min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="font-medium line-clamp-2">{name}</span>
+            <span className="font-medium line-clamp-2 hover:text-primary transition-colors">{name}</span>
           </div>
         </div>
 
@@ -94,7 +100,7 @@ export function BreweryListItem({
             <span>-</span>
           )}
         </div>
-      </div>
+      </Link>
     </TooltipProvider>
   );
 }

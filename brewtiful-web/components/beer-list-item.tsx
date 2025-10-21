@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin } from "lucide-react";
@@ -8,6 +9,7 @@ import { Beer, MapPin } from "lucide-react";
 interface BeerListItemProps {
   name: string;
   brewery: string;
+  breweryId: number;
   style: string;
   abv?: number;
   location?: string;
@@ -54,6 +56,7 @@ function TruncatedText({
 export function BeerListItem({
   name,
   brewery,
+  breweryId,
   style,
   abv,
   location,
@@ -70,7 +73,12 @@ export function BeerListItem({
         {/* Brewery */}
         <div className="col-span-2 flex items-center gap-1 text-sm text-muted-foreground min-w-0">
           <Beer className="h-4 w-4 shrink-0" />
-          <TruncatedText className="line-clamp-1">{brewery}</TruncatedText>
+          <Link
+            href={`/breweries/${breweryId}`}
+            className="line-clamp-1 hover:text-primary hover:underline transition-colors"
+          >
+            <TruncatedText className="line-clamp-1">{brewery}</TruncatedText>
+          </Link>
         </div>
 
         {/* Style */}
