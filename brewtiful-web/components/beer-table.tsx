@@ -10,6 +10,7 @@ interface Beer {
   brewery: {
     name: string;
     country?: string;
+    city?: string;
   };
 }
 
@@ -26,7 +27,8 @@ export function BeerTable({ beers }: BeerTableProps) {
         <div className="col-span-2">Brewery</div>
         <div className="col-span-2">Style</div>
         <div className="col-span-1 text-center">ABV</div>
-        <div className="col-span-2">Location</div>
+        <div className="col-span-1">Country</div>
+        <div className="col-span-1">City</div>
         <div className="col-span-3">Description</div>
       </div>
 
@@ -40,7 +42,8 @@ export function BeerTable({ beers }: BeerTableProps) {
             breweryId={beer.brewery_id}
             style={beer.style}
             abv={beer.abv}
-            location={beer.brewery.country}
+            country={beer.brewery.country}
+            city={beer.brewery.city}
             description={beer.description}
           />
         ))}

@@ -13,7 +13,8 @@ interface BeerCardProps {
   breweryId: number;
   style: string;
   abv?: number;
-  location?: string;
+  country?: string;
+  city?: string;
   description?: string;
 }
 
@@ -60,7 +61,8 @@ export function BeerCard({
   breweryId,
   style,
   abv,
-  location,
+  country,
+  city,
   description
 }: BeerCardProps) {
   return (
@@ -97,10 +99,12 @@ export function BeerCard({
               </div>
             </div>
 
-            {location && (
+            {(city || country) && (
               <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-0">
                 <MapPin className="h-4 w-4 shrink-0" />
-                <span className="truncate">{location}</span>
+                <span className="truncate">
+                  {[city, country].filter(Boolean).join(', ')}
+                </span>
               </div>
             )}
 

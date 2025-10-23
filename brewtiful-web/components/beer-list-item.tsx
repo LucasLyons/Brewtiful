@@ -12,7 +12,8 @@ interface BeerListItemProps {
   breweryId: number;
   style: string;
   abv?: number;
-  location?: string;
+  country?: string;
+  city?: string;
   description?: string;
 }
 
@@ -59,7 +60,8 @@ export function BeerListItem({
   breweryId,
   style,
   abv,
-  location,
+  country,
+  city,
   description
 }: BeerListItemProps) {
   return (
@@ -95,13 +97,22 @@ export function BeerListItem({
           )}
         </div>
 
-        {/* Location */}
-        <div className="col-span-2 flex items-center gap-1 text-sm text-muted-foreground min-w-0">
-          {location ? (
+        {/* Country */}
+        <div className="col-span-1 flex items-center gap-1 text-sm text-muted-foreground min-w-0">
+          {country ? (
             <>
               <MapPin className="h-4 w-4 shrink-0" />
-              <span className="line-clamp-1">{location}</span>
+              <span className="line-clamp-1">{country}</span>
             </>
+          ) : (
+            <span>-</span>
+          )}
+        </div>
+
+        {/* City */}
+        <div className="col-span-1 flex items-center text-sm text-muted-foreground min-w-0">
+          {city ? (
+            <span className="line-clamp-1">{city}</span>
           ) : (
             <span>-</span>
           )}

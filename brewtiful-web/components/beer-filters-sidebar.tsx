@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft, SlidersHorizontal } from "lucide-react";
 
-export type SortOption = "name" | "brewery" | "style" | "abv" | "location" | "popularity";
+export type SortOption = "name" | "brewery" | "style" | "abv" | "country" | "city" | "popularity";
 export type SortDirection = "asc" | "desc";
 
 interface BeerFiltersSidebarProps {
   availableBreweries?: string[];
   availableStyles?: string[];
   availableLocations?: string[];
+  availableCities?: string[];
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -23,6 +24,7 @@ export function BeerFiltersSidebar({
   availableBreweries = [],
   availableStyles = [],
   availableLocations = [],
+  availableCities = [],
   isOpen,
   onToggle,
 }: BeerFiltersSidebarProps) {
@@ -37,6 +39,7 @@ export function BeerFiltersSidebar({
   const [selectedBreweries, setSelectedBreweries] = useState<string[]>([]);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [abvMin, setAbvMin] = useState<string>("");
   const [abvMax, setAbvMax] = useState<string>("");
 
@@ -47,6 +50,7 @@ export function BeerFiltersSidebar({
     const breweries = searchParams.get("breweries");
     const styles = searchParams.get("styles");
     const locations = searchParams.get("locations");
+    const cities = searchParams.get("cities");
     const minAbv = searchParams.get("abvMin");
     const maxAbv = searchParams.get("abvMax");
 
@@ -55,6 +59,7 @@ export function BeerFiltersSidebar({
     if (breweries) setSelectedBreweries(breweries.split(","));
     if (styles) setSelectedStyles(styles.split(","));
     if (locations) setSelectedLocations(locations.split(","));
+    if (cities) setSelectedCities(cities.split(","));
     if (minAbv) setAbvMin(minAbv);
     if (maxAbv) setAbvMax(maxAbv);
   }, [searchParams]);
@@ -64,6 +69,7 @@ export function BeerFiltersSidebar({
     setSelectedBreweries([]);
     setSelectedStyles([]);
     setSelectedLocations([]);
+    setSelectedCities([]);
     setAbvMin("");
     setAbvMax("");
 
@@ -72,6 +78,7 @@ export function BeerFiltersSidebar({
     params.delete("breweries");
     params.delete("styles");
     params.delete("locations");
+    params.delete("cities");
     params.delete("abvMin");
     params.delete("abvMax");
     params.set("page", "1");
@@ -85,6 +92,7 @@ export function BeerFiltersSidebar({
     breweries?: string[];
     styles?: string[];
     locations?: string[];
+    cities?: string[];
     abvMin?: string;
     abvMax?: string;
   }) => {
@@ -96,6 +104,7 @@ export function BeerFiltersSidebar({
     const finalBreweries = updates.breweries ?? selectedBreweries;
     const finalStyles = updates.styles ?? selectedStyles;
     const finalLocations = updates.locations ?? selectedLocations;
+    const finalCities = updates.cities ?? selectedCities;
     const finalAbvMin = updates.abvMin ?? abvMin;
     const finalAbvMax = updates.abvMax ?? abvMax;
 
@@ -120,6 +129,12 @@ export function BeerFiltersSidebar({
       params.set("locations", finalLocations.join(","));
     } else {
       params.delete("locations");
+    }
+
+    if (finalCities.length > 0) {
+      params.set("cities", finalCities.join(","));
+    } else {
+      params.delete("cities");
     }
 
     if (finalAbvMin) {
@@ -167,6 +182,15 @@ export function BeerFiltersSidebar({
     applyFiltersToUrl({ locations: newLocations });
   };
 
+  const toggleCity = (city: string) => {
+    const newCities = selectedCities.includes(city)
+      ? selectedCities.filter((c) => c !== city)
+      : [...selectedCities, city];
+
+    setSelectedCities(newCities);
+    applyFiltersToUrl({ cities: newCities });
+  };
+
   return (
     <>
       {/* Toggle Button */}
@@ -211,7 +235,8 @@ export function BeerFiltersSidebar({
             { value: "brewery", label: "Brewery" },
             { value: "style", label: "Style" },
             { value: "abv", label: "ABV" },
-            { value: "location", label: "Location" },
+            { value: "country", label: "Country" },
+            { value: "city", label: "City" },
           ].map((option) => (
             <div key={option.value} className="flex items-center space-x-2">
               <input
@@ -370,10 +395,10 @@ export function BeerFiltersSidebar({
           </div>
         )}
 
-        {/* Location Filter */}
+        {/* Country Filter */}
         {availableLocations.length > 0 && (
           <div className="space-y-2">
-            <Label className="text-sm">Location ({availableLocations.length})</Label>
+            <Label className="text-sm">Country ({availableLocations.length})</Label>
             <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
               {availableLocations.map((location) => (
                 <div key={location} className="flex items-center space-x-2">
@@ -387,6 +412,30 @@ export function BeerFiltersSidebar({
                     className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {location}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* City Filter */}
+        {availableCities.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-sm">City ({availableCities.length})</Label>
+            <div className="max-h-40 overflow-y-auto space-y-2 text-sm">
+              {availableCities.map((city) => (
+                <div key={city} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`city-${city}`}
+                    checked={selectedCities.includes(city)}
+                    onCheckedChange={() => toggleCity(city)}
+                  />
+                  <label
+                    htmlFor={`city-${city}`}
+                    className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {city}
                   </label>
                 </div>
               ))}

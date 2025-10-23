@@ -14,6 +14,7 @@ interface Beer {
   brewery: {
     name: string;
     country?: string;
+    city?: string;
   };
 }
 
@@ -43,7 +44,8 @@ export function BreweryBeersView({ beers, availableStyles }: BreweryBeersViewPro
               breweryId={beer.brewery_id}
               style={beer.style}
               abv={beer.abv}
-              location={beer.brewery.country}
+              country={beer.brewery.country}
+              city={beer.brewery.city}
               description={beer.description}
             />
           ))}

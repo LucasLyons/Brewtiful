@@ -16,6 +16,7 @@ interface BeersPageProps {
     breweries?: string;
     styles?: string;
     locations?: string;
+    cities?: string;
     abvMin?: string;
     abvMax?: string;
   }>;
@@ -36,6 +37,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   const filterBreweries = params.breweries?.split(',').filter(Boolean) || [];
   const filterStyles = params.styles?.split(',').filter(Boolean) || [];
   const filterLocations = params.locations?.split(',').filter(Boolean) || [];
+  const filterCities = params.cities?.split(',').filter(Boolean) || [];
   const abvMin = params.abvMin ? parseFloat(params.abvMin) : undefined;
   const abvMax = params.abvMax ? parseFloat(params.abvMax) : undefined;
 
@@ -75,6 +77,17 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     locationBreweryIds = breweriesInLocations?.map(b => b.brewery_id) || [];
   }
 
+  // Find brewery IDs for city filter
+  let cityBreweryIds: string[] = [];
+  if (filterCities.length > 0) {
+    const { data: breweriesInCities } = await supabase
+      .from("breweries")
+      .select('brewery_id')
+      .in('city', filterCities);
+
+    cityBreweryIds = breweriesInCities?.map(b => b.brewery_id) || [];
+  }
+
   // Build query with search filter
   let countQuery = supabase
     .from("beers")
@@ -86,7 +99,8 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       *,
       brewery:breweries (
       name,
-      country
+      country,
+      city
       )
     `);
 
@@ -113,6 +127,12 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   if (locationBreweryIds.length > 0) {
     countQuery = countQuery.in('brewery_id', locationBreweryIds);
     beersQuery = beersQuery.in('brewery_id', locationBreweryIds);
+  }
+
+  // Apply city filter at database level (via brewery IDs)
+  if (cityBreweryIds.length > 0) {
+    countQuery = countQuery.in('brewery_id', cityBreweryIds);
+    beersQuery = beersQuery.in('brewery_id', cityBreweryIds);
   }
 
   // Apply style filters
@@ -155,7 +175,8 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       orderColumn = 'scraped_review_count';
       break;
     case 'brewery':
-    case 'location':
+    case 'country':
+    case 'city':
       // We'll sort these after fetching since they're in the joined table
       orderColumn = 'name'; // Default sort for now
       break;
@@ -182,24 +203,32 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
         availableBreweries={[]}
         availableStyles={[]}
         availableLocations={[]}
+        availableCities={[]}
       >
         <p className="text-muted-foreground">No beers found.</p>
       </BeersPageLayout>
     );
   }
 
-  // Apply client-side sorting for brewery and location
+  // Apply client-side sorting for brewery, country, and city
   let filteredBeers = beers;
   if (sortBy === 'brewery') {
     filteredBeers = [...filteredBeers].sort((a, b) => {
       const comparison = a.brewery.name.localeCompare(b.brewery.name);
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  } else if (sortBy === 'location') {
+  } else if (sortBy === 'country') {
     filteredBeers = [...filteredBeers].sort((a, b) => {
       const aCountry = a.brewery.country || '';
       const bCountry = b.brewery.country || '';
       const comparison = aCountry.localeCompare(bCountry);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  } else if (sortBy === 'city') {
+    filteredBeers = [...filteredBeers].sort((a, b) => {
+      const aCity = a.brewery.city || '';
+      const bCity = b.brewery.city || '';
+      const comparison = aCity.localeCompare(bCity);
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }
@@ -213,7 +242,8 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       style,
       brewery:breweries (
         name,
-        country
+        country,
+        city
       )
     `);
 
@@ -236,6 +266,11 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     optionsQuery = optionsQuery.in('brewery_id', locationBreweryIds);
   }
 
+  // Apply city filter at database level for options
+  if (cityBreweryIds.length > 0) {
+    optionsQuery = optionsQuery.in('brewery_id', cityBreweryIds);
+  }
+
   // Apply ABV filters (database level)
   if (abvMin !== undefined) {
     optionsQuery = optionsQuery.gte('abv', abvMin);
@@ -255,9 +290,11 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     brewery: {
       name: string;
       country?: string;
+      city?: string;
     } | {
       name: string;
       country?: string;
+      city?: string;
     }[];
   }
 
@@ -291,6 +328,14 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     )
   ).sort() as string[];
 
+  const availableCities = Array.from(
+    new Set(
+      availableBeersForOptions
+        ?.map((b) => (Array.isArray(b.brewery) ? b.brewery[0]?.city : b.brewery?.city))
+        .filter(Boolean) || []
+    )
+  ).sort() as string[];
+
   const totalPages = count ? Math.ceil(count / ITEMS_PER_PAGE) : 1;
 
 
@@ -299,6 +344,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       availableBreweries={availableBreweries}
       availableStyles={availableStyles}
       availableLocations={availableLocations}
+      availableCities={availableCities}
     >
       <h1 className="text-4xl font-bold mb-2">Discover Beers</h1>
       <div className="mb-4 text-sm text-muted-foreground">

@@ -7,6 +7,7 @@ interface BeersPageLayoutProps {
   availableBreweries: string[];
   availableStyles: string[];
   availableLocations: string[];
+  availableCities: string[];
   children: React.ReactNode;
 }
 
@@ -14,6 +15,7 @@ export function BeersPageLayout({
   availableBreweries,
   availableStyles,
   availableLocations,
+  availableCities,
   children,
 }: BeersPageLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -39,6 +41,7 @@ export function BeersPageLayout({
         availableBreweries={availableBreweries}
         availableStyles={availableStyles}
         availableLocations={availableLocations}
+        availableCities={availableCities}
         isOpen={isSidebarOpen}
         onToggle={handleToggleSidebar}
       />

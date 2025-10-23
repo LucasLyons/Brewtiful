@@ -57,7 +57,8 @@ export async function BreweryBeersSection({
       *,
       brewery:breweries (
         name,
-        country
+        country,
+        city
       )
     `)
     .eq('brewery_id', breweryIdNum);
