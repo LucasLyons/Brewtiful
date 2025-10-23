@@ -13,6 +13,7 @@ interface Beer {
   style: string;
   abv?: number;
   description?: string;
+  active?: boolean;
   brewery: {
     name: string;
     country?: string;
@@ -94,6 +95,7 @@ export function BeersView({ beers, paginationTop }: BeersViewProps) {
               country={beer.brewery.country}
               city={beer.brewery.city}
               description={beer.description}
+              active={beer.active}
             />
           ))}
         </div>

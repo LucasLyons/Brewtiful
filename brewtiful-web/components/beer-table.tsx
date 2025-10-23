@@ -7,6 +7,7 @@ interface Beer {
   style: string;
   abv?: number;
   description?: string;
+  active?: boolean;
   brewery: {
     name: string;
     country?: string;
@@ -27,9 +28,10 @@ export function BeerTable({ beers }: BeerTableProps) {
         <div className="col-span-2">Brewery</div>
         <div className="col-span-2">Style</div>
         <div className="col-span-1 text-center">ABV</div>
+        <div className="col-span-1 text-center">Status</div>
         <div className="col-span-1">Country</div>
         <div className="col-span-1">City</div>
-        <div className="col-span-3">Description</div>
+        <div className="col-span-2">Description</div>
       </div>
 
       {/* Table Body */}
@@ -45,6 +47,7 @@ export function BeerTable({ beers }: BeerTableProps) {
             country={beer.brewery.country}
             city={beer.brewery.city}
             description={beer.description}
+            active={beer.active}
           />
         ))}
       </div>

@@ -42,6 +42,7 @@ export function BeerFiltersSidebar({
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [abvMin, setAbvMin] = useState<string>("");
   const [abvMax, setAbvMax] = useState<string>("");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
 
   // Initialize from URL params
   useEffect(() => {
@@ -53,6 +54,7 @@ export function BeerFiltersSidebar({
     const cities = searchParams.get("cities");
     const minAbv = searchParams.get("abvMin");
     const maxAbv = searchParams.get("abvMax");
+    const active = searchParams.get("active");
 
     if (sort) setSortBy(sort);
     if (direction) setSortDirection(direction);
@@ -62,6 +64,7 @@ export function BeerFiltersSidebar({
     if (cities) setSelectedCities(cities.split(","));
     if (minAbv) setAbvMin(minAbv);
     if (maxAbv) setAbvMax(maxAbv);
+    if (active) setActiveFilter(active);
   }, [searchParams]);
 
   const resetFilters = () => {
@@ -72,6 +75,7 @@ export function BeerFiltersSidebar({
     setSelectedCities([]);
     setAbvMin("");
     setAbvMax("");
+    setActiveFilter("all");
 
     const params = new URLSearchParams(searchParams.toString());
     // Keep sort and direction, only delete filter params
@@ -81,6 +85,7 @@ export function BeerFiltersSidebar({
     params.delete("cities");
     params.delete("abvMin");
     params.delete("abvMax");
+    params.delete("active");
     params.set("page", "1");
 
     router.push(`/beers?${params.toString()}`);
@@ -95,6 +100,7 @@ export function BeerFiltersSidebar({
     cities?: string[];
     abvMin?: string;
     abvMax?: string;
+    active?: string;
   }) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -107,6 +113,7 @@ export function BeerFiltersSidebar({
     const finalCities = updates.cities ?? selectedCities;
     const finalAbvMin = updates.abvMin ?? abvMin;
     const finalAbvMax = updates.abvMax ?? abvMax;
+    const finalActive = updates.active ?? activeFilter;
 
     // Set sort params
     params.set("sort", finalSortBy);
@@ -147,6 +154,12 @@ export function BeerFiltersSidebar({
       params.set("abvMax", finalAbvMax);
     } else {
       params.delete("abvMax");
+    }
+
+    if (finalActive !== "all") {
+      params.set("active", finalActive);
+    } else {
+      params.delete("active");
     }
 
     // Reset to page 1 when filters change
@@ -344,6 +357,64 @@ export function BeerFiltersSidebar({
               max="100"
               step="0.1"
             />
+          </div>
+        </div>
+
+        {/* Active Status Filter */}
+        <div className="space-y-2">
+          <Label className="text-sm">Status</Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="active-all"
+                name="active"
+                value="all"
+                checked={activeFilter === "all"}
+                onChange={(e) => {
+                  setActiveFilter(e.target.value);
+                  applyFiltersToUrl({ active: e.target.value });
+                }}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="active-all" className="text-sm cursor-pointer">
+                All Beers
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="active-true"
+                name="active"
+                value="true"
+                checked={activeFilter === "true"}
+                onChange={(e) => {
+                  setActiveFilter(e.target.value);
+                  applyFiltersToUrl({ active: e.target.value });
+                }}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="active-true" className="text-sm cursor-pointer">
+                Active Only
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="active-false"
+                name="active"
+                value="false"
+                checked={activeFilter === "false"}
+                onChange={(e) => {
+                  setActiveFilter(e.target.value);
+                  applyFiltersToUrl({ active: e.target.value });
+                }}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="active-false" className="text-sm cursor-pointer">
+                Inactive Only
+              </Label>
+            </div>
           </div>
         </div>
 

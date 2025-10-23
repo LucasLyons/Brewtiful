@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beer, MapPin, Star } from "lucide-react";
+import { Beer, MapPin, Star, CheckCircle2, XCircle } from "lucide-react";
 
 interface BeerCardProps {
   name: string;
@@ -16,6 +16,7 @@ interface BeerCardProps {
   country?: string;
   city?: string;
   description?: string;
+  active?: boolean;
 }
 
 function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
@@ -64,7 +65,8 @@ export function BeerCard({
   abv,
   country,
   city,
-  description
+  description,
+  active = true
 }: BeerCardProps) {
   return (
     <TooltipProvider>
@@ -74,14 +76,40 @@ export function BeerCard({
             <CardTitle className="text-xl flex-1 min-w-0 line-clamp-2">
               {name}
             </CardTitle>
-            <Badge variant="secondary" className="shrink-0">
-              {abv}
-            </Badge>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="secondary">
+                {abv}%
+              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    {active ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{active ? "Active" : "Inactive"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-          <CardDescription className="flex items-center gap-1 min-w-0">
-            <Beer className="h-4 w-4 shrink-0" />
-            <BreweryLink brewery={brewery} breweryId={breweryId} />
-          </CardDescription>
+          <div className="space-y-1">
+            <CardDescription className="flex items-center gap-1 min-w-0">
+              <Beer className="h-4 w-4 shrink-0" />
+              <BreweryLink brewery={brewery} breweryId={breweryId} />
+            </CardDescription>
+            {(city || country) && (
+              <CardDescription className="flex items-center gap-1 min-w-0">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {[city, country].filter(Boolean).join(', ')}
+                </span>
+              </CardDescription>
+            )}
+          </div>
         </CardHeader>
 
         <CardContent className="flex-1">
@@ -93,15 +121,6 @@ export function BeerCard({
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               </div>
             </div>
-
-            {(city || country) && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-0">
-                <MapPin className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {[city, country].filter(Boolean).join(', ')}
-                </span>
-              </div>
-            )}
 
             {description && (
               <p className="text-sm text-muted-foreground line-clamp-3">

@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beer, MapPin } from "lucide-react";
+import { Beer, MapPin, CheckCircle2, XCircle } from "lucide-react";
 
 interface BeerListItemProps {
   name: string;
@@ -15,6 +15,7 @@ interface BeerListItemProps {
   country?: string;
   city?: string;
   description?: string;
+  active?: boolean;
 }
 
 function TruncatedText({
@@ -62,7 +63,8 @@ export function BeerListItem({
   abv,
   country,
   city,
-  description
+  description,
+  active = true
 }: BeerListItemProps) {
   return (
     <TooltipProvider>
@@ -97,6 +99,24 @@ export function BeerListItem({
           )}
         </div>
 
+        {/* Active Status */}
+        <div className="col-span-1 flex items-center justify-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="cursor-help">
+                {active ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{active ? "Active" : "Inactive"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
         {/* Country */}
         <div className="col-span-1 flex items-center gap-1 text-sm text-muted-foreground min-w-0">
           {country ? (
@@ -119,7 +139,7 @@ export function BeerListItem({
         </div>
 
         {/* Description */}
-        <div className="col-span-3 flex items-center min-w-0">
+        <div className="col-span-2 flex items-center min-w-0">
           {description ? (
             <TruncatedText as="p" className="text-sm text-muted-foreground line-clamp-2">
               {description}

@@ -19,6 +19,7 @@ interface BeersPageProps {
     cities?: string;
     abvMin?: string;
     abvMax?: string;
+    active?: string;
   }>;
 }
 
@@ -40,6 +41,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   const filterCities = params.cities?.split(',').filter(Boolean) || [];
   const abvMin = params.abvMin ? parseFloat(params.abvMin) : undefined;
   const abvMax = params.abvMax ? parseFloat(params.abvMax) : undefined;
+  const activeFilter = params.active;
 
   // Get search query
   const searchQuery = params.q?.trim();
@@ -149,6 +151,15 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   if (abvMax !== undefined) {
     countQuery = countQuery.lte('abv', abvMax);
     beersQuery = beersQuery.lte('abv', abvMax);
+  }
+
+  // Apply active filter
+  if (activeFilter === 'true') {
+    countQuery = countQuery.eq('active', true);
+    beersQuery = beersQuery.eq('active', true);
+  } else if (activeFilter === 'false') {
+    countQuery = countQuery.eq('active', false);
+    beersQuery = beersQuery.eq('active', false);
   }
 
   // For brewery and location filters, we need to handle the joined data
@@ -277,6 +288,13 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   }
   if (abvMax !== undefined) {
     optionsQuery = optionsQuery.lte('abv', abvMax);
+  }
+
+  // Apply active filter (database level)
+  if (activeFilter === 'true') {
+    optionsQuery = optionsQuery.eq('active', true);
+  } else if (activeFilter === 'false') {
+    optionsQuery = optionsQuery.eq('active', false);
   }
 
   // DON'T apply style filter yet - we need to see all styles available for the selected breweries/locations
