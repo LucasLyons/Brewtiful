@@ -22,9 +22,10 @@ interface Beer {
 
 interface BeersViewProps {
   beers: Beer[];
+  paginationTop?: React.ReactNode;
 }
 
-export function BeersView({ beers }: BeersViewProps) {
+export function BeersView({ beers, paginationTop }: BeersViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,6 +72,13 @@ export function BeersView({ beers }: BeersViewProps) {
         </div>
         <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
       </div>
+
+      {/* Pagination (Top) */}
+      {paginationTop && (
+        <div className="mb-6">
+          {paginationTop}
+        </div>
+      )}
 
       {/* Conditional Rendering Based on View Mode */}
       {viewMode === "grid" ? (

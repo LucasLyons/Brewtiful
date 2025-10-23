@@ -18,41 +18,42 @@ interface BeerCardProps {
   description?: string;
 }
 
-function TruncatedText({
-  children,
-  className,
-  as: Component = "div"
-}: {
-  children: string;
-  className?: string;
-  as?: "div" | "span";
-}) {
-  const ref = useRef<HTMLDivElement & HTMLSpanElement>(null);
+function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
+  const linkRef = useRef<HTMLAnchorElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
   useEffect(() => {
-    const element = ref.current;
+    const element = linkRef.current;
     if (element) {
-      setIsTruncated(element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth);
+      setIsTruncated(element.scrollWidth > element.clientWidth);
     }
-  }, [children]);
+  }, [brewery]);
+
+  const link = (
+    <Link
+      ref={linkRef}
+      href={`/breweries/${breweryId}`}
+      className="truncate hover:text-primary hover:underline transition-colors min-w-0 block"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {brewery}
+    </Link>
+  );
 
   if (isTruncated) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Component ref={ref} className={`${className} cursor-help`}>
-            {children}
-          </Component>
+          {link}
         </TooltipTrigger>
         <TooltipContent>
-          <p className="max-w-xs">{children}</p>
+          <p className="max-w-xs">{brewery}</p>
         </TooltipContent>
       </Tooltip>
     );
   }
 
-  return <Component ref={ref} className={className}>{children}</Component>;
+  return link;
 }
 
 export function BeerCard({
@@ -79,13 +80,7 @@ export function BeerCard({
           </div>
           <CardDescription className="flex items-center gap-1 min-w-0">
             <Beer className="h-4 w-4 shrink-0" />
-            <Link
-              href={`/breweries/${breweryId}`}
-              className="truncate hover:text-primary hover:underline transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <TruncatedText as="span" className="truncate">{brewery}</TruncatedText>
-            </Link>
+            <BreweryLink brewery={brewery} breweryId={breweryId} />
           </CardDescription>
         </CardHeader>
 

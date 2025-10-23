@@ -102,7 +102,7 @@ export function BeerListItem({
           {country ? (
             <>
               <MapPin className="h-4 w-4 shrink-0" />
-              <span className="line-clamp-1">{country}</span>
+              <TruncatedText className="line-clamp-1">{country}</TruncatedText>
             </>
           ) : (
             <span>-</span>
@@ -112,7 +112,7 @@ export function BeerListItem({
         {/* City */}
         <div className="col-span-1 flex items-center text-sm text-muted-foreground min-w-0">
           {city ? (
-            <span className="line-clamp-1">{city}</span>
+            <TruncatedText className="line-clamp-1">{city}</TruncatedText>
           ) : (
             <span>-</span>
           )}

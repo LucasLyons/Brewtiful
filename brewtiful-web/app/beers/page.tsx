@@ -351,7 +351,15 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
         Showing {from + 1}-{Math.min(to + 1, count || 0)} of {count || 0} beers
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
-      <BeersView beers={filteredBeers} />
+      <BeersView
+        beers={filteredBeers}
+        paginationTop={
+          <BeersPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
+        }
+      />
       <BeersPagination
         currentPage={currentPage}
         totalPages={totalPages}

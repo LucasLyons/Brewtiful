@@ -13,15 +13,23 @@ interface Brewery {
 
 interface BreweriesViewProps {
   breweries: Brewery[];
+  paginationTop?: React.ReactNode;
 }
 
-export function BreweriesView({ breweries }: BreweriesViewProps) {
+export function BreweriesView({ breweries, paginationTop }: BreweriesViewProps) {
   return (
     <>
       {/* Header Section with Search */}
       <div className="mb-8">
         <BrewerySearch />
       </div>
+
+      {/* Pagination (Top) */}
+      {paginationTop && (
+        <div className="mb-6">
+          {paginationTop}
+        </div>
+      )}
 
       {/* List Header */}
       <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-muted/50 border-b font-semibold text-sm">
