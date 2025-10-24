@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beer, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { Beer, MapPin } from "lucide-react";
 
 interface BeerListItemProps {
   name: string;
@@ -15,7 +15,7 @@ interface BeerListItemProps {
   country?: string;
   city?: string;
   description?: string;
-  active?: boolean;
+  active?: 'Active' | 'Inactive' | 'Unknown';
 }
 
 function TruncatedText({
@@ -64,7 +64,7 @@ export function BeerListItem({
   country,
   city,
   description,
-  active = true
+  active = 'Active'
 }: BeerListItemProps) {
   return (
     <TooltipProvider>
@@ -101,20 +101,19 @@ export function BeerListItem({
 
         {/* Active Status */}
         <div className="col-span-1 flex items-center justify-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="cursor-help">
-                {active ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{active ? "Active" : "Inactive"}</p>
-            </TooltipContent>
-          </Tooltip>
+          {active === 'Active' ? (
+            <Badge variant="default" className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-xs">
+              Active
+            </Badge>
+          ) : active === 'Inactive' ? (
+            <Badge variant="default" className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-xs">
+              Inactive
+            </Badge>
+          ) : (
+            <Badge variant="default" className="bg-gray-500 hover:bg-gray-600 dark:bg-gray-400 dark:hover:bg-gray-500 text-xs">
+              Unknown
+            </Badge>
+          )}
         </div>
 
         {/* Country */}

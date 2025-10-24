@@ -42,7 +42,8 @@ export function BeerFiltersSidebar({
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [abvMin, setAbvMin] = useState<string>("");
   const [abvMax, setAbvMax] = useState<string>("");
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [includeInactive, setIncludeInactive] = useState<boolean>(false);
+  const [includeUnknown, setIncludeUnknown] = useState<boolean>(true);
 
   // Initialize from URL params
   useEffect(() => {
@@ -54,7 +55,8 @@ export function BeerFiltersSidebar({
     const cities = searchParams.get("cities");
     const minAbv = searchParams.get("abvMin");
     const maxAbv = searchParams.get("abvMax");
-    const active = searchParams.get("active");
+    const inactive = searchParams.get("includeInactive");
+    const unknown = searchParams.get("includeUnknown");
 
     if (sort) setSortBy(sort);
     if (direction) setSortDirection(direction);
@@ -64,7 +66,9 @@ export function BeerFiltersSidebar({
     if (cities) setSelectedCities(cities.split(","));
     if (minAbv) setAbvMin(minAbv);
     if (maxAbv) setAbvMax(maxAbv);
-    if (active) setActiveFilter(active);
+    setIncludeInactive(inactive === 'true');
+    // Unknown is included by default (excluded only when explicitly set to 'false')
+    setIncludeUnknown(unknown !== 'false');
   }, [searchParams]);
 
   const resetFilters = () => {
@@ -75,7 +79,8 @@ export function BeerFiltersSidebar({
     setSelectedCities([]);
     setAbvMin("");
     setAbvMax("");
-    setActiveFilter("all");
+    setIncludeInactive(false);
+    setIncludeUnknown(true);
 
     const params = new URLSearchParams(searchParams.toString());
     // Keep sort and direction, only delete filter params
@@ -85,7 +90,8 @@ export function BeerFiltersSidebar({
     params.delete("cities");
     params.delete("abvMin");
     params.delete("abvMax");
-    params.delete("active");
+    params.delete("includeInactive");
+    params.delete("includeUnknown");
     params.set("page", "1");
 
     router.push(`/beers?${params.toString()}`);
@@ -100,7 +106,8 @@ export function BeerFiltersSidebar({
     cities?: string[];
     abvMin?: string;
     abvMax?: string;
-    active?: string;
+    includeInactive?: boolean;
+    includeUnknown?: boolean;
   }) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -113,7 +120,8 @@ export function BeerFiltersSidebar({
     const finalCities = updates.cities ?? selectedCities;
     const finalAbvMin = updates.abvMin ?? abvMin;
     const finalAbvMax = updates.abvMax ?? abvMax;
-    const finalActive = updates.active ?? activeFilter;
+    const finalIncludeInactive = updates.includeInactive ?? includeInactive;
+    const finalIncludeUnknown = updates.includeUnknown ?? includeUnknown;
 
     // Set sort params
     params.set("sort", finalSortBy);
@@ -156,10 +164,17 @@ export function BeerFiltersSidebar({
       params.delete("abvMax");
     }
 
-    if (finalActive !== "all") {
-      params.set("active", finalActive);
+    if (finalIncludeInactive) {
+      params.set("includeInactive", "true");
     } else {
-      params.delete("active");
+      params.delete("includeInactive");
+    }
+
+    // Unknown is included by default, set param to false when explicitly excluded
+    if (!finalIncludeUnknown) {
+      params.set("includeUnknown", "false");
+    } else {
+      params.delete("includeUnknown");
     }
 
     // Reset to page 1 when filters change
@@ -362,58 +377,41 @@ export function BeerFiltersSidebar({
 
         {/* Active Status Filter */}
         <div className="space-y-2">
-          <Label className="text-sm">Status</Label>
+          <Label className="text-sm">Status (Active + Unknown by default)</Label>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="active-all"
-                name="active"
-                value="all"
-                checked={activeFilter === "all"}
-                onChange={(e) => {
-                  setActiveFilter(e.target.value);
-                  applyFiltersToUrl({ active: e.target.value });
+              <Checkbox
+                id="include-inactive"
+                checked={includeInactive}
+                onCheckedChange={(checked) => {
+                  const newValue = checked === true;
+                  setIncludeInactive(newValue);
+                  applyFiltersToUrl({ includeInactive: newValue });
                 }}
-                className="h-4 w-4"
               />
-              <Label htmlFor="active-all" className="text-sm cursor-pointer">
-                All Beers
-              </Label>
+              <label
+                htmlFor="include-inactive"
+                className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Include Inactive
+              </label>
             </div>
             <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="active-true"
-                name="active"
-                value="true"
-                checked={activeFilter === "true"}
-                onChange={(e) => {
-                  setActiveFilter(e.target.value);
-                  applyFiltersToUrl({ active: e.target.value });
+              <Checkbox
+                id="include-unknown"
+                checked={includeUnknown}
+                onCheckedChange={(checked) => {
+                  const newValue = checked === true;
+                  setIncludeUnknown(newValue);
+                  applyFiltersToUrl({ includeUnknown: newValue });
                 }}
-                className="h-4 w-4"
               />
-              <Label htmlFor="active-true" className="text-sm cursor-pointer">
-                Active Only
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="active-false"
-                name="active"
-                value="false"
-                checked={activeFilter === "false"}
-                onChange={(e) => {
-                  setActiveFilter(e.target.value);
-                  applyFiltersToUrl({ active: e.target.value });
-                }}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="active-false" className="text-sm cursor-pointer">
-                Inactive Only
-              </Label>
+              <label
+                htmlFor="include-unknown"
+                className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Include Unknown
+              </label>
             </div>
           </div>
         </div>

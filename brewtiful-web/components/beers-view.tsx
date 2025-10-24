@@ -13,7 +13,7 @@ interface Beer {
   style: string;
   abv?: number;
   description?: string;
-  active?: boolean;
+  active?: 'Active' | 'Inactive' | 'Unknown';
   brewery: {
     name: string;
     country?: string;

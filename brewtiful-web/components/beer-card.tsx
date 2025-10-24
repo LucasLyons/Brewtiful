@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beer, MapPin, Star, CheckCircle2, XCircle } from "lucide-react";
+import { Beer, MapPin, Star, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 
 interface BeerCardProps {
   name: string;
@@ -16,7 +16,7 @@ interface BeerCardProps {
   country?: string;
   city?: string;
   description?: string;
-  active?: boolean;
+  active?: 'Active' | 'Inactive' | 'Unknown';
 }
 
 function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
@@ -57,6 +57,42 @@ function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: numbe
   return link;
 }
 
+function BeerDescription({ description }: { description: string }) {
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const element = descRef.current;
+    if (element) {
+      setIsTruncated(element.scrollHeight > element.clientHeight);
+    }
+  }, [description]);
+
+  const descriptionText = (
+    <p
+      ref={descRef}
+      className="text-sm text-muted-foreground line-clamp-3"
+    >
+      {description}
+    </p>
+  );
+
+  if (isTruncated) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {descriptionText}
+        </TooltipTrigger>
+        <TooltipContent className="max-w-md">
+          <p className="whitespace-pre-wrap">{description}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return descriptionText;
+}
+
 export function BeerCard({
   name,
   brewery,
@@ -66,7 +102,7 @@ export function BeerCard({
   country,
   city,
   description,
-  active = true
+  active = 'Active'
 }: BeerCardProps) {
   return (
     <TooltipProvider>
@@ -83,15 +119,17 @@ export function BeerCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-help">
-                    {active ? (
+                    {active === 'Active' ? (
                       <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
-                    ) : (
+                    ) : active === 'Inactive' ? (
                       <XCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+                    ) : (
+                      <HelpCircle className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{active ? "Active" : "Inactive"}</p>
+                  <p>{active}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -122,11 +160,7 @@ export function BeerCard({
               </div>
             </div>
 
-            {description && (
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {description}
-              </p>
-            )}
+            {description && <BeerDescription description={description} />}
           </div>
         </CardContent>
 

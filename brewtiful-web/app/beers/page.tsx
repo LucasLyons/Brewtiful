@@ -19,7 +19,8 @@ interface BeersPageProps {
     cities?: string;
     abvMin?: string;
     abvMax?: string;
-    active?: string;
+    includeInactive?: string;
+    includeUnknown?: string;
   }>;
 }
 
@@ -41,7 +42,9 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   const filterCities = params.cities?.split(',').filter(Boolean) || [];
   const abvMin = params.abvMin ? parseFloat(params.abvMin) : undefined;
   const abvMax = params.abvMax ? parseFloat(params.abvMax) : undefined;
-  const activeFilter = params.active;
+  const includeInactive = params.includeInactive === 'true';
+  // Unknown is included by default (excluded only when explicitly set to 'false')
+  const includeUnknown = params.includeUnknown !== 'false';
 
   // Get search query
   const searchQuery = params.q?.trim();
@@ -153,14 +156,14 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     beersQuery = beersQuery.lte('abv', abvMax);
   }
 
-  // Apply active filter
-  if (activeFilter === 'true') {
-    countQuery = countQuery.eq('active', true);
-    beersQuery = beersQuery.eq('active', true);
-  } else if (activeFilter === 'false') {
-    countQuery = countQuery.eq('active', false);
-    beersQuery = beersQuery.eq('active', false);
-  }
+  // Apply active filter - by default show Active and Unknown beers
+  // Build array of statuses to include
+  const statusesToInclude: string[] = ['Active'];
+  if (includeInactive) statusesToInclude.push('Inactive');
+  if (includeUnknown) statusesToInclude.push('Unknown');
+
+  countQuery = countQuery.in('active', statusesToInclude);
+  beersQuery = beersQuery.in('active', statusesToInclude);
 
   // For brewery and location filters, we need to handle the joined data
   // We'll apply these filters after fetching
@@ -195,10 +198,36 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       orderColumn = 'name';
   }
 
-  // Fetch beers with pagination
-  const { data: beers, error } = await beersQuery
-    .order(orderColumn, { ascending: orderAscending })
-    .range(from, to);
+  // For better performance: if result set is small enough (< 10k beers based on count),
+  // fetch all beers at once and use for both display and filter options
+  // Otherwise, use separate queries
+  const shouldFetchAll = count && count < 10000;
+
+  let beers;
+  let error;
+  let allBeersForFilters;
+
+  if (shouldFetchAll) {
+    // Fetch all beers in one query, use for both display and filters
+    const { data: allBeers, error: fetchError } = await beersQuery
+      .order(orderColumn, { ascending: orderAscending })
+      .limit(50000);
+
+    error = fetchError;
+    allBeersForFilters = allBeers || [];
+
+    // Apply client-side pagination
+    beers = allBeers?.slice(from, to + 1) || [];
+  } else {
+    // Fetch paginated beers for display
+    const { data: paginatedBeers, error: fetchError } = await beersQuery
+      .order(orderColumn, { ascending: orderAscending })
+      .range(from, to);
+
+    beers = paginatedBeers;
+    error = fetchError;
+    allBeersForFilters = null; // Will use separate optionsQuery below
+  }
 
   if (error) {
     return (
@@ -245,61 +274,70 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
   }
 
   // Get ALL beers with brewery data for filter options
-  // We apply database-level filters (search, ABV, styles) only
-  // Then apply brewery/location filters client-side
-  let optionsQuery = supabase
-    .from("beers")
-    .select(`
-      style,
-      brewery:breweries (
-        name,
-        country,
-        city
-      )
-    `);
+  // If we already fetched all beers above, reuse that data for better performance
+  // Otherwise, make a separate optimized query for filter options
+  let allOptionsBeers;
 
-  // Apply search filter if present (database level)
-  if (searchQuery) {
-    if (searchBreweryIds.length > 0) {
-      optionsQuery = optionsQuery.or(`name.ilike.%${searchQuery}%,brewery_id.in.(${searchBreweryIds.join(',')})`);
-    } else {
-      optionsQuery = optionsQuery.ilike('name', `%${searchQuery}%`);
+  if (allBeersForFilters) {
+    // Reuse the data we already fetched - much faster!
+    allOptionsBeers = allBeersForFilters;
+  } else {
+    // Need to fetch separately - only happens when result set is large (> 10k beers)
+    // We apply database-level filters (search, ABV, styles) only
+    // Then apply brewery/location filters client-side
+    let optionsQuery = supabase
+      .from("beers")
+      .select(`
+        style,
+        brewery:breweries (
+          name,
+          country,
+          city
+        )
+      `);
+
+    // Apply search filter if present (database level)
+    if (searchQuery) {
+      if (searchBreweryIds.length > 0) {
+        optionsQuery = optionsQuery.or(`name.ilike.%${searchQuery}%,brewery_id.in.(${searchBreweryIds.join(',')})`);
+      } else {
+        optionsQuery = optionsQuery.ilike('name', `%${searchQuery}%`);
+      }
     }
-  }
 
-  // Apply brewery filter at database level for options
-  if (filterBreweryIds.length > 0) {
-    optionsQuery = optionsQuery.in('brewery_id', filterBreweryIds);
-  }
+    // Apply brewery filter at database level for options
+    if (filterBreweryIds.length > 0) {
+      optionsQuery = optionsQuery.in('brewery_id', filterBreweryIds);
+    }
 
-  // Apply location filter at database level for options
-  if (locationBreweryIds.length > 0) {
-    optionsQuery = optionsQuery.in('brewery_id', locationBreweryIds);
-  }
+    // Apply location filter at database level for options
+    if (locationBreweryIds.length > 0) {
+      optionsQuery = optionsQuery.in('brewery_id', locationBreweryIds);
+    }
 
-  // Apply city filter at database level for options
-  if (cityBreweryIds.length > 0) {
-    optionsQuery = optionsQuery.in('brewery_id', cityBreweryIds);
-  }
+    // Apply city filter at database level for options
+    if (cityBreweryIds.length > 0) {
+      optionsQuery = optionsQuery.in('brewery_id', cityBreweryIds);
+    }
 
-  // Apply ABV filters (database level)
-  if (abvMin !== undefined) {
-    optionsQuery = optionsQuery.gte('abv', abvMin);
-  }
-  if (abvMax !== undefined) {
-    optionsQuery = optionsQuery.lte('abv', abvMax);
-  }
+    // Apply ABV filters (database level)
+    if (abvMin !== undefined) {
+      optionsQuery = optionsQuery.gte('abv', abvMin);
+    }
+    if (abvMax !== undefined) {
+      optionsQuery = optionsQuery.lte('abv', abvMax);
+    }
 
-  // Apply active filter (database level)
-  if (activeFilter === 'true') {
-    optionsQuery = optionsQuery.eq('active', true);
-  } else if (activeFilter === 'false') {
-    optionsQuery = optionsQuery.eq('active', false);
+    // Apply active filter (database level)
+    optionsQuery = optionsQuery.in('active', statusesToInclude);
+
+    // DON'T apply style filter yet - we need to see all styles available for the selected breweries/locations
+
+    // IMPORTANT: Set a high limit to get all beers for filter options
+    // Supabase defaults to 1000 rows, which is too low for our dataset
+    const { data: fetchedOptions } = await optionsQuery.limit(50000);
+    allOptionsBeers = fetchedOptions;
   }
-
-  // DON'T apply style filter yet - we need to see all styles available for the selected breweries/locations
-
-  const { data: allOptionsBeers } = await optionsQuery;
 
   // Now apply style filter client-side to determine what options are actually available
   // (brewery and location are already applied at database level)
