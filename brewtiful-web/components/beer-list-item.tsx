@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Beer, MapPin } from "lucide-react";
 
 interface BeerListItemProps {
+  beerId: string;
   name: string;
   brewery: string;
   breweryId: number;
@@ -56,6 +57,7 @@ function TruncatedText({
 }
 
 export function BeerListItem({
+  beerId,
   name,
   brewery,
   breweryId,
@@ -71,7 +73,12 @@ export function BeerListItem({
       <div className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-2 flex items-center min-w-0">
-          <span className="font-medium line-clamp-2">{name}</span>
+          <Link
+            href={`/beers/${beerId}`}
+            className="font-medium line-clamp-2 hover:text-primary hover:underline transition-colors"
+          >
+            {name}
+          </Link>
         </div>
 
         {/* Brewery */}

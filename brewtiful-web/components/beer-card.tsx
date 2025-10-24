@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Beer, MapPin, Star, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 
 interface BeerCardProps {
+  beerId: string;
   name: string;
   brewery: string;
   breweryId: number;
@@ -94,6 +95,7 @@ function BeerDescription({ description }: { description: string }) {
 }
 
 export function BeerCard({
+  beerId,
   name,
   brewery,
   breweryId,
@@ -110,7 +112,12 @@ export function BeerCard({
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-xl flex-1 min-w-0 line-clamp-2">
-              {name}
+              <Link
+                href={`/beers/${beerId}`}
+                className="hover:text-primary hover:underline transition-colors"
+              >
+                {name}
+              </Link>
             </CardTitle>
             <div className="flex items-center gap-2 shrink-0">
               <Badge variant="secondary">

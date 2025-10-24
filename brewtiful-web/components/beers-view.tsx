@@ -87,6 +87,7 @@ export function BeersView({ beers, paginationTop }: BeersViewProps) {
           {beers.map((beer) => (
             <BeerCard
               key={beer.beer_id}
+              beerId={beer.beer_id}
               name={beer.name}
               brewery={beer.brewery.name}
               breweryId={beer.brewery_id}

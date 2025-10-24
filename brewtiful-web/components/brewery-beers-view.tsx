@@ -39,6 +39,7 @@ export function BreweryBeersView({ beers, availableStyles }: BreweryBeersViewPro
           {beers.map((beer) => (
             <BeerCard
               key={beer.beer_id}
+              beerId={beer.beer_id}
               name={beer.name}
               brewery={beer.brewery.name}
               breweryId={beer.brewery_id}

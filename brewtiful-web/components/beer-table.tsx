@@ -39,6 +39,7 @@ export function BeerTable({ beers }: BeerTableProps) {
         {beers.map((beer) => (
           <BeerListItem
             key={beer.beer_id}
+            beerId={beer.beer_id}
             name={beer.name}
             brewery={beer.brewery.name}
             breweryId={beer.brewery_id}
