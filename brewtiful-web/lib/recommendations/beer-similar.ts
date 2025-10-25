@@ -9,13 +9,15 @@ import { createClient } from '@/utils/supabase/server';
  */
 export async function getSimilarBeerIds(
   beerId: number,
-  limit: number = 10
+  limit: number = 10,
+  show: boolean = false
 ): Promise<number[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc('get_similar_beers', {
     beer_id_input: beerId,
     match_count: limit,
+    show_inactive: show ? 'TRUE' : 'FALSE'
   });
 
   if (error) {
@@ -40,7 +42,8 @@ export async function getSimilarBeerIds(
  */
 export async function getSimilarBeers(
   beerId: number,
-  limit: number = 10
+  limit: number = 10,
+  show: boolean = false
 ) {
   const supabase = await createClient();
 
@@ -48,6 +51,7 @@ export async function getSimilarBeers(
   const { data: similarBeers, error: rpcError } = await supabase.rpc('get_similar_beers', {
     beer_id_input: beerId,
     match_count: limit,
+    show_inactive: show ? 'TRUE' : 'FALSE'
   });
 
   if (rpcError) {
@@ -66,9 +70,7 @@ export async function getSimilarBeers(
   }
 
   // Extract beer IDs
-  // Note: SQL function returns 'id' column, not 'beer_id'
   const beerIds = similarBeers.map((row: { beer_id: number }) => row.beer_id);
-  console.log('Extracted beer IDs:', beerIds);
 
   // Fetch full beer details with brewery information
   const { data: beers, error: beersError } = await supabase

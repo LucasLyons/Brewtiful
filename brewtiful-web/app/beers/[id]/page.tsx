@@ -8,14 +8,21 @@ interface BeerDetailPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    showInactive?: string;
+  }>;
 }
 
-export default async function BeerDetailPage({ params }: BeerDetailPageProps) {
+export default async function BeerDetailPage({ params, searchParams }: BeerDetailPageProps) {
   const supabase = await createClient();
   const { id } = await params;
+  const { showInactive } = await searchParams;
 
   // Convert id to number since beer_id is stored as integer
   const beerIdNum = parseInt(id, 10);
+
+  // Parse showInactive query param
+  const shouldShowInactive = showInactive === 'true';
 
   // Fetch beer details with brewery information
   const { data: beer, error: beerError } = await supabase
@@ -38,7 +45,7 @@ export default async function BeerDetailPage({ params }: BeerDetailPageProps) {
   }
 
   // Fetch similar beers based on embeddings
-  const similarBeers = await getSimilarBeers(beerIdNum, 10);
+  const similarBeers = await getSimilarBeers(beerIdNum, 10, shouldShowInactive);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -46,7 +53,12 @@ export default async function BeerDetailPage({ params }: BeerDetailPageProps) {
       <BeerInfoCard beer={beer} />
 
       {/* Similar Beers Carousel */}
-      {similarBeers.length > 0 && <SimilarBeers beers={similarBeers} />}
+      {similarBeers.length > 0 && (
+        <SimilarBeers
+          beers={similarBeers}
+          showInactive={shouldShowInactive}
+        />
+      )}
     </div>
   );
 }

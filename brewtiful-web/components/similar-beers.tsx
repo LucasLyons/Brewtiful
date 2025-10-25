@@ -1,8 +1,11 @@
 "use client";
 
 import { useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BeerCard } from "@/components/beer-card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Brewery {
@@ -26,10 +29,13 @@ interface SimilarBeer {
 
 interface SimilarBeersProps {
   beers: SimilarBeer[];
+  showInactive: boolean;
 }
 
-export function SimilarBeers({ beers }: SimilarBeersProps) {
+export function SimilarBeers({ beers, showInactive }: SimilarBeersProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -44,6 +50,18 @@ export function SimilarBeers({ beers }: SimilarBeersProps) {
     }
   };
 
+  const handleShowInactiveChange = (checked: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (checked) {
+      params.set('showInactive', 'true');
+    } else {
+      params.delete('showInactive');
+    }
+
+    router.push(`?${params.toString()}`);
+  };
+
   if (!beers || beers.length === 0) {
     return null;
   }
@@ -52,23 +70,38 @@ export function SimilarBeers({ beers }: SimilarBeersProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Similar Beers</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => scroll('left')}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => scroll('right')}
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="show-inactive"
+              checked={showInactive}
+              onCheckedChange={handleShowInactiveChange}
+            />
+            <Label
+              htmlFor="show-inactive"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Show Inactive
+            </Label>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => scroll('left')}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => scroll('right')}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
