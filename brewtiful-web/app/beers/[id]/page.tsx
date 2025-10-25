@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { BeerInfoCard } from '@/components/beer-info-card';
+import { SimilarBeers } from '@/components/similar-beers';
+import { getSimilarBeers } from '@/lib/recommendations/beer-similar';
 
 interface BeerDetailPageProps {
   params: Promise<{
@@ -35,10 +37,16 @@ export default async function BeerDetailPage({ params }: BeerDetailPageProps) {
     notFound();
   }
 
+  // Fetch similar beers based on embeddings
+  const similarBeers = await getSimilarBeers(beerIdNum, 10);
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Beer Info Card */}
       <BeerInfoCard beer={beer} />
+
+      {/* Similar Beers Carousel */}
+      {similarBeers.length > 0 && <SimilarBeers beers={similarBeers} />}
     </div>
   );
 }
