@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin, Star, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { ClickableFilter } from "@/components/clickable-filter";
 
 interface BeerCardProps {
   beerId: string;
@@ -149,8 +150,24 @@ export function BeerCard({
             {(city || country) && (
               <CardDescription className="flex items-center gap-1 min-w-0">
                 <MapPin className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {[city, country].filter(Boolean).join(', ')}
+                <span className="truncate flex gap-1">
+                  {city && (
+                    <>
+                      <ClickableFilter
+                        value={city}
+                        filterType="city"
+                        basePath="/beers"
+                      />
+                      {country && <span>,</span>}
+                    </>
+                  )}
+                  {country && (
+                    <ClickableFilter
+                      value={country}
+                      filterType="country"
+                      basePath="/beers"
+                    />
+                  )}
                 </span>
               </CardDescription>
             )}
@@ -159,7 +176,14 @@ export function BeerCard({
 
         <CardContent className="flex-1">
           <div className="space-y-3">
-            <Badge variant="outline" className="truncate max-w-full">{style}</Badge>
+            <Badge variant="outline" className="truncate max-w-full hover:bg-primary/10 transition-colors">
+              <ClickableFilter
+                value={style}
+                filterType="style"
+                basePath="/beers"
+                className="hover:no-underline"
+              />
+            </Badge>
 
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1">

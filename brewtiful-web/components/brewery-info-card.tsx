@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building2, Globe } from "lucide-react";
+import { ClickableFilter } from "@/components/clickable-filter";
 
 interface Brewery {
   brewery_id: string;
@@ -43,10 +44,30 @@ export function BreweryInfoCard({ brewery }: BreweryInfoCardProps) {
               <MapPin className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div className="space-y-1">
                 <div className="text-sm font-medium">Location</div>
-                <div className="text-sm text-muted-foreground">
-                  {[brewery.city, brewery.province_or_state, brewery.country]
-                    .filter(Boolean)
-                    .join(', ')}
+                <div className="text-sm text-muted-foreground flex gap-1 flex-wrap">
+                  {brewery.city && (
+                    <>
+                      <ClickableFilter
+                        value={brewery.city}
+                        filterType="city"
+                        basePath="/breweries"
+                      />
+                      {(brewery.province_or_state || brewery.country) && <span>,</span>}
+                    </>
+                  )}
+                  {brewery.province_or_state && (
+                    <>
+                      <span>{brewery.province_or_state}</span>
+                      {brewery.country && <span>,</span>}
+                    </>
+                  )}
+                  {brewery.country && (
+                    <ClickableFilter
+                      value={brewery.country}
+                      filterType="country"
+                      basePath="/breweries"
+                    />
+                  )}
                 </div>
               </div>
             </div>

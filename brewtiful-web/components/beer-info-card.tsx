@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { ClickableFilter } from "@/components/clickable-filter";
 
 interface Brewery {
   brewery_id: number;
@@ -79,10 +80,30 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
               <MapPin className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div className="space-y-1">
                 <div className="text-sm font-medium">Location</div>
-                <div className="text-sm text-muted-foreground">
-                  {[brewery.city, brewery.province_or_state, brewery.country]
-                    .filter(Boolean)
-                    .join(', ')}
+                <div className="text-sm text-muted-foreground flex gap-1 flex-wrap">
+                  {brewery.city && (
+                    <>
+                      <ClickableFilter
+                        value={brewery.city}
+                        filterType="city"
+                        basePath="/beers"
+                      />
+                      {(brewery.province_or_state || brewery.country) && <span>,</span>}
+                    </>
+                  )}
+                  {brewery.province_or_state && (
+                    <>
+                      <span>{brewery.province_or_state}</span>
+                      {brewery.country && <span>,</span>}
+                    </>
+                  )}
+                  {brewery.country && (
+                    <ClickableFilter
+                      value={brewery.country}
+                      filterType="country"
+                      basePath="/beers"
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -107,7 +128,11 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
             <div className="space-y-1">
               <div className="text-sm font-medium">Style</div>
               <div className="text-sm text-muted-foreground">
-                {beer.style}
+                <ClickableFilter
+                  value={beer.style}
+                  filterType="style"
+                  basePath="/beers"
+                />
               </div>
             </div>
           </div>

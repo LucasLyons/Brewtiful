@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin } from "lucide-react";
+import { ClickableFilter } from "@/components/clickable-filter";
 
 interface BeerListItemProps {
   beerId: string;
@@ -94,7 +95,14 @@ export function BeerListItem({
 
         {/* Style */}
         <div className="col-span-2 flex items-center min-w-0">
-          <Badge variant="outline" className="line-clamp-1 max-w-full">{style}</Badge>
+          <Badge variant="outline" className="line-clamp-1 max-w-full hover:bg-primary/10 transition-colors">
+            <ClickableFilter
+              value={style}
+              filterType="style"
+              basePath="/beers"
+              className="hover:no-underline"
+            />
+          </Badge>
         </div>
 
         {/* ABV */}
@@ -128,7 +136,12 @@ export function BeerListItem({
           {country ? (
             <>
               <MapPin className="h-4 w-4 shrink-0" />
-              <TruncatedText className="line-clamp-1">{country}</TruncatedText>
+              <ClickableFilter
+                value={country}
+                filterType="country"
+                basePath="/beers"
+                className="line-clamp-1"
+              />
             </>
           ) : (
             <span>-</span>
@@ -138,7 +151,12 @@ export function BeerListItem({
         {/* City */}
         <div className="col-span-1 flex items-center text-sm text-muted-foreground min-w-0">
           {city ? (
-            <TruncatedText className="line-clamp-1">{city}</TruncatedText>
+            <ClickableFilter
+              value={city}
+              filterType="city"
+              basePath="/beers"
+              className="line-clamp-1"
+            />
           ) : (
             <span>-</span>
           )}
