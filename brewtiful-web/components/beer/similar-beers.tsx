@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BeerCard } from "@/components/beer-card";
+import { BeerCard } from "@/components/beer/beer-card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";

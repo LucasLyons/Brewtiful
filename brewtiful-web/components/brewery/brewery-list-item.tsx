@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Building2 } from "lucide-react";
-import { ClickableFilter } from "@/components/clickable-filter";
+import { ClickableFilter } from "@/components/shared/clickable-filter";
 
 interface BreweryListItemProps {
   breweryId: string;

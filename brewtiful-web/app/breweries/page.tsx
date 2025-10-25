@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
-import { BreweriesView } from '@/components/breweries-view';
-import { BreweriesPageLayout } from '@/components/breweries-page-layout';
-import { BreweriesPagination } from '@/components/breweries-pagination';
-import { BrewerySortOption, SortDirection } from '@/components/brewery-filters-sidebar';
+import { BreweriesView } from '@/components/brewery/breweries-view';
+import { BreweriesPageLayout } from '@/components/brewery/breweries-page-layout';
+import { BreweriesPagination } from '@/components/brewery/breweries-pagination';
+import { BrewerySortOption, SortDirection } from '@/components/brewery/brewery-filters-sidebar';
 
 const ITEMS_PER_PAGE = 24;
 

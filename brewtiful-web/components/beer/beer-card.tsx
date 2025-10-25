@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin, Star, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
-import { ClickableFilter } from "@/components/clickable-filter";
+import { ClickableFilter } from "@/components/shared/clickable-filter";
 
 interface BeerCardProps {
   beerId: string;

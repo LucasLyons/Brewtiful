@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { BreweryInfoCard } from '@/components/brewery-info-card';
-import { BreweryBeersSection } from '@/components/brewery-beers-section';
+import { BreweryInfoCard } from '@/components/brewery/brewery-info-card';
+import { BreweryBeersSection } from '@/components/brewery/brewery-beers-section';
 
 interface BreweryDetailPageProps {
   params: Promise<{

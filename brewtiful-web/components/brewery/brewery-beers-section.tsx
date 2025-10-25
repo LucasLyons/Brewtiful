@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BreweryBeersView } from './brewery-beers-view';
-import { BeersPagination } from './beers-pagination';
-import { SortOption, SortDirection } from './beer-filters-sidebar';
+import { BreweryBeersView } from '@/components/brewery/brewery-beers-view';
+import { BeersPagination } from '@/components/beer/beers-pagination';
+import { SortOption, SortDirection } from '@/components/beer/beer-filters-sidebar';
 
 const ITEMS_PER_PAGE = 12; // Smaller page size for brewery-specific view
 

@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { BeerInfoCard } from '@/components/beer-info-card';
-import { SimilarBeers } from '@/components/similar-beers';
+import { BeerInfoCard } from '@/components/beer/beer-info-card';
+import { SimilarBeers } from '@/components/beer/similar-beers';
 import { getSimilarBeers } from '@/lib/recommendations/beer-similar';
 
 interface BeerDetailPageProps {

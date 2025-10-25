@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BeerCard } from "./beer-card";
-import { BreweryBeersFilters } from "./brewery-beers-filters";
+import { BeerCard } from "@/components/beer/beer-card";
+import { BreweryBeersFilters } from "@/components/brewery/brewery-beers-filters";
 
 interface Beer {
   beer_id: string;

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BeerCard } from "./beer-card";
-import { BeerTable } from "./beer-table";
-import { ViewMode, ViewToggle } from "./view-toggle";
-import { BeerSearch } from "./beer-search";
+import { BeerCard } from "@/components/beer/beer-card";
+import { BeerTable } from "@/components/beer/beer-table";
+import { ViewMode, ViewToggle } from "@/components/layout/view-toggle";
+import { BeerSearch } from "@/components/beer/beer-search";
 
 interface Beer {
   beer_id: string;

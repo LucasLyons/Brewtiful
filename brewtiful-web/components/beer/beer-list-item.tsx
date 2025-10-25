@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin } from "lucide-react";
-import { ClickableFilter } from "@/components/clickable-filter";
+import { ClickableFilter } from "@/components/shared/clickable-filter";
 
 interface BeerListItemProps {
   beerId: string;

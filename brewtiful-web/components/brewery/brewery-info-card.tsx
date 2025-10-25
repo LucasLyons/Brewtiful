@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building2, Globe } from "lucide-react";
-import { ClickableFilter } from "@/components/clickable-filter";
+import { ClickableFilter } from "@/components/shared/clickable-filter";
 
 interface Brewery {
   brewery_id: string;

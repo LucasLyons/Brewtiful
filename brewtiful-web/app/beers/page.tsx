@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
-import { BeersView } from '@/components/beers-view';
-import { BeersPagination } from '@/components/beers-pagination';
-import { BeersPageLayout } from '@/components/beers-page-layout';
-import { SortOption, SortDirection } from '@/components/beer-filters-sidebar';
+import { BeersView } from '@/components/beer/beers-view';
+import { BeersPagination } from '@/components/beer/beers-pagination';
+import { BeersPageLayout } from '@/components/beer/beers-page-layout';
+import { SortOption, SortDirection } from '@/components/beer/beer-filters-sidebar';
 
 
 const ITEMS_PER_PAGE = 24;

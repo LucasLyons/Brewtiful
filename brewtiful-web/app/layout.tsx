@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/next"
-import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import BrewtifulLogo from "@/components/brewtiful-logo"
-import { NavigationTabs } from "@/components/navigation-tabs";
+import { AuthButton } from "@/components/auth/auth-button";
+import { ThemeSwitcher } from "@/components/shared/theme-switcher";
+import BrewtifulLogo from "@/components/layout/brewtiful-logo"
+import { NavigationTabs } from "@/components/layout/navigation-tabs";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic'
