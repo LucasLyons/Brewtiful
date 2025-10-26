@@ -9,6 +9,7 @@ interface StarRatingProps {
   onRate: (rating: number) => Promise<void>
   size?: 'sm' | 'md' | 'lg'
   readonly?: boolean
+  disabled?: boolean
   className?: string
 }
 
@@ -25,6 +26,7 @@ interface StarRatingProps {
  * @param onRate - Callback function to handle rating submission
  * @param size - Star size variant (sm: 16px, md: 20px, lg: 24px)
  * @param readonly - If true, shows rating without interaction
+ * @param disabled - If true, prevents all interactions (no hover, no click)
  * @param className - Additional CSS classes
  */
 export function StarRating({
@@ -32,6 +34,7 @@ export function StarRating({
   onRate,
   size = 'md',
   readonly = false,
+  disabled = false,
   className
 }: StarRatingProps) {
   const [rating, setRating] = useState<number | null>(initialRating)
@@ -44,7 +47,7 @@ export function StarRating({
   }, [initialRating])
 
   const handleClick = async (value: number) => {
-    if (readonly || isSubmitting) return
+    if (readonly || disabled || isSubmitting) return
 
     setIsSubmitting(true)
     try {
@@ -58,7 +61,7 @@ export function StarRating({
   }
 
   const handleMouseMove = (index: number, event: React.MouseEvent<HTMLDivElement>) => {
-    if (readonly) return
+    if (readonly || disabled) return
 
     const rect = event.currentTarget.getBoundingClientRect()
     const x = event.clientX - rect.left
@@ -70,7 +73,7 @@ export function StarRating({
   }
 
   const handleMouseLeave = () => {
-    if (!readonly) {
+    if (!readonly && !disabled) {
       setHoveredRating(null)
     }
   }
@@ -100,10 +103,12 @@ export function StarRating({
             key={index}
             className={cn(
               'relative',
-              !readonly && 'cursor-pointer transition-transform hover:scale-110'
+              !readonly && !disabled && 'cursor-pointer transition-transform hover:scale-110',
+              disabled && 'cursor-not-allowed opacity-70'
             )}
             onMouseMove={(e) => handleMouseMove(index, e)}
             onClick={(e) => {
+              if (disabled) return
               const rect = e.currentTarget.getBoundingClientRect()
               const x = e.clientX - rect.left
               const isLeftHalf = x < rect.width / 2
@@ -154,8 +159,8 @@ export function StarRating({
         )
       })}
 
-      {/* Display numeric rating */}
-      {rating !== null && (
+      {/* Display numeric rating - only show if not disabled or if there's an actual rating */}
+      {rating !== null && !disabled && (
         <span className="ml-2 text-sm font-medium text-muted-foreground">
           {rating.toFixed(1)}
         </span>

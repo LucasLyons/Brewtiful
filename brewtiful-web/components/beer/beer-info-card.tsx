@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
@@ -42,7 +41,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
 
   const [rating, setRating] = useState<number | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showError, setShowError] = useState(false);
   const supabase = createClient();
 
   // Fetch user and rating on mount
@@ -69,12 +68,12 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
 
   const handleRate = async (newRating: number) => {
     if (!user || !brewery) {
-      // Show tooltip for unauthenticated users
+      // Show error text for unauthenticated users
       if (!user) {
-        setShowTooltip(true);
+        setShowError(true);
         setTimeout(() => {
-          setShowTooltip(false);
-        }, 2000);
+          setShowError(false);
+        }, 3000);
       }
       return;
     }
@@ -88,6 +87,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
       });
 
       setRating(newRating);
+      setShowError(false); // Clear any error state
     } catch (error) {
       console.error('Failed to submit rating:', error);
     }
@@ -119,25 +119,18 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
           </CardTitle>
         </div>
         <div className="pt-4 flex flex-col gap-2">
-          <TooltipProvider>
-            <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
-              <TooltipTrigger asChild>
-                <div>
-                  <StarRating
-                    initialRating={rating}
-                    onRate={handleRate}
-                    size="lg"
-                  />
-                </div>
-              </TooltipTrigger>
-              {!user && (
-                <TooltipContent>
-                  <p>Log in to rate beers!</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-          {rating !== null && (
+          <StarRating
+            initialRating={rating}
+            onRate={handleRate}
+            size="lg"
+            disabled={!user}
+          />
+          {!user && showError && (
+            <p className="text-sm text-red-600 dark:text-red-500">
+              Please log in to rate
+            </p>
+          )}
+          {rating !== null && user && (
             <button
               onClick={handleRemoveRating}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
