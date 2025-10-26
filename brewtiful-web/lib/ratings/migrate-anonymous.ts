@@ -38,6 +38,7 @@ export async function migrateAnonymousData(
   migratedRatings: number
   migratedSavedBeers: number
   migratedSavedBreweries: number
+  migratedEvents: number
   errors: string[]
 }> {
   const supabase = await createClient()
@@ -45,6 +46,7 @@ export async function migrateAnonymousData(
   let migratedRatings = 0
   let migratedSavedBeers = 0
   let migratedSavedBreweries = 0
+  let migratedEvents = 0
 
   try {
     // Migrate ratings from anonymous to authenticated user
@@ -65,46 +67,40 @@ export async function migrateAnonymousData(
     errors.push(`Ratings migration exception: ${error}`)
   }
 
+  // NOTE: Saved beers and breweries are not migrated because:
+  // 1. The user_saved_beers and user_saved_breweries tables don't have client_id columns
+  // 2. The save functions only work for authenticated users (require user_id)
+  // 3. Anonymous users cannot save beers/breweries in the current implementation
+  // If anonymous saving is needed in the future, add client_id columns to these tables
+
+  // Kept for API compatibility but will always be 0
+  migratedSavedBeers = 0
+  migratedSavedBreweries = 0
+
   try {
-    // Migrate saved beers from anonymous to authenticated user
-    const { data: savedBeers, error: savedBeersError } = await supabase
-      .from('user_saved_beers')
+    // Migrate events from anonymous to authenticated user
+    // Only migrate events where user_id is NULL (anonymous events)
+    const { data: events, error: eventsError } = await supabase
+      .from('events')
       .update({ user_id: userId })
+      .eq('client_id', clientId)
       .is('user_id', null)
       .select()
 
-    if (savedBeersError) {
-      errors.push(`Saved beers migration error: ${savedBeersError.message}`)
+    if (eventsError) {
+      errors.push(`Events migration error: ${eventsError.message}`)
     } else {
-      migratedSavedBeers = savedBeers?.length || 0
+      migratedEvents = events?.length || 0
     }
   } catch (error) {
-    errors.push(`Saved beers migration exception: ${error}`)
-  }
-
-  try {
-    // Migrate saved breweries from anonymous to authenticated user
-    const { data: savedBreweries, error: savedBreweriesError } = await supabase
-      .from('user_saved_breweries')
-      .update({ user_id: userId })
-      .is('user_id', null)
-      .select()
-
-    if (savedBreweriesError) {
-      errors.push(
-        `Saved breweries migration error: ${savedBreweriesError.message}`
-      )
-    } else {
-      migratedSavedBreweries = savedBreweries?.length || 0
-    }
-  } catch (error) {
-    errors.push(`Saved breweries migration exception: ${error}`)
+    errors.push(`Events migration exception: ${error}`)
   }
 
   return {
     migratedRatings,
     migratedSavedBeers,
     migratedSavedBreweries,
+    migratedEvents,
     errors,
   }
 }
@@ -128,6 +124,7 @@ export async function migrateAnonymousDataServiceRole(
   migratedRatings: number
   migratedSavedBeers: number
   migratedSavedBreweries: number
+  migratedEvents: number
   errors: string[]
 }> {
   // This would require setting up a service role client

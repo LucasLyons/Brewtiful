@@ -46,6 +46,7 @@ export default function MigratePage() {
           ratings: result.migratedRatings,
           savedBeers: result.migratedSavedBeers,
           savedBreweries: result.migratedSavedBreweries,
+          events: result.migratedEvents,
         })
 
         setStatus('complete')

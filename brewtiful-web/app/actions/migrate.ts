@@ -26,6 +26,7 @@ export async function migrateUserData(clientId: string) {
       migratedRatings: 0,
       migratedSavedBeers: 0,
       migratedSavedBreweries: 0,
+      migratedEvents: 0,
     }
   }
 
@@ -38,5 +39,6 @@ export async function migrateUserData(clientId: string) {
     migratedRatings: result.migratedRatings,
     migratedSavedBeers: result.migratedSavedBeers,
     migratedSavedBreweries: result.migratedSavedBreweries,
+    migratedEvents: result.migratedEvents,
   }
 }
