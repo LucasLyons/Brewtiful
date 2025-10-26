@@ -61,6 +61,55 @@ function TruncatedText({
   return <Component ref={ref} className={className}>{children}</Component>;
 }
 
+function TruncatedClickableFilter({
+  value,
+  filterType,
+  basePath,
+  className
+}: {
+  value: string;
+  filterType: "city" | "country" | "style";
+  basePath: "/beers" | "/breweries";
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (element) {
+      setIsTruncated(element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth);
+    }
+  }, [value]);
+
+  const filter = (
+    <div ref={ref} className={className}>
+      <ClickableFilter
+        value={value}
+        filterType={filterType}
+        basePath={basePath}
+      />
+    </div>
+  );
+
+  if (isTruncated) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="cursor-help min-w-0">
+            {filter}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-xs">{value}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return filter;
+}
+
 export function BeerListItem({
   beerId,
   name,
@@ -76,7 +125,7 @@ export function BeerListItem({
   initialRating
 }: BeerListItemProps) {
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={1000}>
       <div className="grid grid-cols-14 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-2 flex items-center min-w-0">
@@ -142,7 +191,7 @@ export function BeerListItem({
           {country ? (
             <>
               <MapPin className="h-4 w-4 shrink-0" />
-              <ClickableFilter
+              <TruncatedClickableFilter
                 value={country}
                 filterType="country"
                 basePath="/beers"
@@ -157,7 +206,7 @@ export function BeerListItem({
         {/* City */}
         <div className="col-span-1 flex items-center text-sm text-muted-foreground min-w-0">
           {city ? (
-            <ClickableFilter
+            <TruncatedClickableFilter
               value={city}
               filterType="city"
               basePath="/beers"

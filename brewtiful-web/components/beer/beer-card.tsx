@@ -185,7 +185,7 @@ export function BeerCard({
   };
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={1000}>
       <Card className="flex flex-col h-full hover:shadow-lg dark:hover:bg-white/5 transition-all">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
