@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
+import { BeerRatingButton } from "@/components/beer/beer-rating-button";
 
 interface BeerListItemProps {
   beerId: string;
@@ -71,7 +72,7 @@ export function BeerListItem({
 }: BeerListItemProps) {
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+      <div className="grid grid-cols-13 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-2 flex items-center min-w-0">
           <Link
@@ -171,6 +172,11 @@ export function BeerListItem({
           ) : (
             <span className="text-sm text-muted-foreground">-</span>
           )}
+        </div>
+
+        {/* Rating */}
+        <div className="col-span-1 flex items-center justify-center">
+          <BeerRatingButton beerId={parseInt(beerId)} breweryId={breweryId} />
         </div>
       </div>
     </TooltipProvider>

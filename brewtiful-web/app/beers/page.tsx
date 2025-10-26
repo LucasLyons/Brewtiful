@@ -102,7 +102,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
     .from("beers")
     .select(`
       *,
-      brewery:breweries (
+      brewery:breweries!beers_brewery_id_fkey (
       name,
       country,
       city
@@ -289,7 +289,7 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       .from("beers")
       .select(`
         style,
-        brewery:breweries (
+        brewery:breweries!beers_brewery_id_fkey (
           name,
           country,
           city

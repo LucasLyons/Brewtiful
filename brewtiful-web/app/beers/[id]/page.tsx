@@ -29,7 +29,7 @@ export default async function BeerDetailPage({ params, searchParams }: BeerDetai
     .from('beers')
     .select(`
       *,
-      brewery:breweries (
+      brewery:breweries!beers_brewery_id_fkey (
         brewery_id,
         name,
         country,

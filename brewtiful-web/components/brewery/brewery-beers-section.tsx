@@ -55,7 +55,7 @@ export async function BreweryBeersSection({
     .from("beers")
     .select(`
       *,
-      brewery:breweries (
+      brewery:breweries!beers_brewery_id_fkey (
         name,
         country,
         city

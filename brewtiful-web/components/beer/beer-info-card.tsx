@@ -1,9 +1,16 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
+import { StarRating } from "@/components/shared/star-rating";
+import { getUserRating } from '@/lib/ratings/get-user-ratings';
+import { submitRating } from '@/lib/ratings/submit-rating';
+import { useClientId } from '@/components/providers/client-id-provider';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface Brewery {
   brewery_id: number;
@@ -33,6 +40,55 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
   // Handle brewery being an array (from Supabase join)
   const brewery = Array.isArray(beer.brewery) ? beer.brewery[0] : beer.brewery;
 
+  const [rating, setRating] = useState<number | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const clientId = useClientId();
+  const supabase = createClient();
+
+  // Fetch user and rating on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+
+      // Fetch rating if we have clientId and brewery
+      if (clientId && brewery) {
+        const userRating = await getUserRating(
+          beer.beer_id,
+          brewery.brewery_id,
+          currentUser?.id || null,
+          clientId
+        );
+        setRating(userRating);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beer.beer_id, brewery, clientId]);
+
+  const handleRate = async (newRating: number) => {
+    if (!clientId || !brewery) {
+      console.error('Client ID or brewery not available');
+      return;
+    }
+
+    try {
+      await submitRating({
+        beerId: beer.beer_id,
+        breweryId: brewery.brewery_id,
+        rating: newRating,
+        userId: user?.id || null,
+        clientId
+      });
+
+      setRating(newRating);
+    } catch (error) {
+      console.error('Failed to submit rating:', error);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -41,6 +97,13 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
             <Beer className="h-8 w-8" />
             {beer.name}
           </CardTitle>
+        </div>
+        <div className="pt-4">
+          <StarRating
+            initialRating={rating}
+            onRate={handleRate}
+            size="lg"
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

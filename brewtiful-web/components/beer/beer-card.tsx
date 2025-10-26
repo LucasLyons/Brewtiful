@@ -5,8 +5,14 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Beer, MapPin, Star, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { Beer, MapPin, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
+import { StarRating } from "@/components/shared/star-rating";
+import { getUserRating } from '@/lib/ratings/get-user-ratings';
+import { submitRating } from '@/lib/ratings/submit-rating';
+import { useClientId } from '@/components/providers/client-id-provider';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface BeerCardProps {
   beerId: string;
@@ -107,6 +113,55 @@ export function BeerCard({
   description,
   active = 'Active'
 }: BeerCardProps) {
+  const [rating, setRating] = useState<number | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const clientId = useClientId();
+  const supabase = createClient();
+
+  // Fetch user and rating on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+
+      // Fetch rating if we have clientId
+      if (clientId) {
+        const userRating = await getUserRating(
+          parseInt(beerId),
+          breweryId,
+          currentUser?.id || null,
+          clientId
+        );
+        setRating(userRating);
+      }
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beerId, breweryId, clientId]);
+
+  const handleRate = async (newRating: number) => {
+    if (!clientId) {
+      console.error('Client ID not available');
+      return;
+    }
+
+    try {
+      await submitRating({
+        beerId: parseInt(beerId),
+        breweryId,
+        rating: newRating,
+        userId: user?.id || null,
+        clientId
+      });
+
+      setRating(newRating);
+    } catch (error) {
+      console.error('Failed to submit rating:', error);
+    }
+  };
+
   return (
     <TooltipProvider>
       <Card className="flex flex-col h-full hover:shadow-lg dark:hover:bg-white/5 transition-all">
@@ -186,9 +241,11 @@ export function BeerCard({
             </Badge>
 
             <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              </div>
+              <StarRating
+                initialRating={rating}
+                onRate={handleRate}
+                size="sm"
+              />
             </div>
 
             {description && <BeerDescription description={description} />}
