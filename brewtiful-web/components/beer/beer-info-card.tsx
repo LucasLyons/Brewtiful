@@ -7,7 +7,7 @@ import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "luci
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
-import { submitRating } from '@/lib/ratings/submit-rating';
+import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
 import { useClientId } from '@/components/providers/client-id-provider';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -89,6 +89,23 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
     }
   };
 
+  const handleRemoveRating = async () => {
+    if (!clientId || !brewery) return;
+
+    try {
+      await removeRating({
+        beerId: beer.beer_id,
+        breweryId: brewery.brewery_id,
+        userId: user?.id || null,
+        clientId
+      });
+
+      setRating(null);
+    } catch (error) {
+      console.error('Failed to remove rating:', error);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -98,12 +115,20 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
             {beer.name}
           </CardTitle>
         </div>
-        <div className="pt-4">
+        <div className="pt-4 flex flex-col gap-2">
           <StarRating
             initialRating={rating}
             onRate={handleRate}
             size="lg"
           />
+          {rating !== null && (
+            <button
+              onClick={handleRemoveRating}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+            >
+              Remove rating
+            </button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

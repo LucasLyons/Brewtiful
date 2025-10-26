@@ -115,7 +115,7 @@ export function StarRating({
               className={cn(
                 starSize,
                 'text-yellow-400',
-                isFullStar || isHalfStar ? 'opacity-0' : 'opacity-100'
+                isFullStar ? 'opacity-0' : 'opacity-100'
               )}
             />
 
@@ -131,14 +131,24 @@ export function StarRating({
 
             {/* Half star overlay */}
             {isHalfStar && (
-              <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+              <>
+                {/* Hollow outline for full star */}
                 <Star
                   className={cn(
                     starSize,
-                    'text-yellow-400 fill-yellow-400'
+                    'absolute inset-0 text-yellow-400'
                   )}
                 />
-              </div>
+                {/* Filled half star */}
+                <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+                  <Star
+                    className={cn(
+                      starSize,
+                      'text-yellow-400 fill-yellow-400'
+                    )}
+                  />
+                </div>
+              </>
             )}
           </div>
         )

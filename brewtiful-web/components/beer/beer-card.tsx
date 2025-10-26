@@ -9,7 +9,7 @@ import { Beer, MapPin, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
-import { submitRating } from '@/lib/ratings/submit-rating';
+import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
 import { useClientId } from '@/components/providers/client-id-provider';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -162,6 +162,23 @@ export function BeerCard({
     }
   };
 
+  const handleRemoveRating = async () => {
+    if (!clientId) return;
+
+    try {
+      await removeRating({
+        beerId: parseInt(beerId),
+        breweryId,
+        userId: user?.id || null,
+        clientId
+      });
+
+      setRating(null);
+    } catch (error) {
+      console.error('Failed to remove rating:', error);
+    }
+  };
+
   return (
     <TooltipProvider>
       <Card className="flex flex-col h-full hover:shadow-lg dark:hover:bg-white/5 transition-all">
@@ -240,12 +257,20 @@ export function BeerCard({
               />
             </Badge>
 
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex flex-col gap-2 text-sm">
               <StarRating
                 initialRating={rating}
                 onRate={handleRate}
                 size="sm"
               />
+              {rating !== null && (
+                <button
+                  onClick={handleRemoveRating}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                >
+                  Remove rating
+                </button>
+              )}
             </div>
 
             {description && <BeerDescription description={description} />}
