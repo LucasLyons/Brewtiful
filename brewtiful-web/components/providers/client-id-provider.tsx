@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 const ClientIdContext = createContext<string | null>(null)
 
 const CLIENT_ID_KEY = 'brewtiful_client_id'
+const BACKUP_CLIENT_ID_KEY = 'brewtiful_backup_client_id'
 
 /**
  * Generates a simple UUID v4 without external dependencies
@@ -18,6 +19,54 @@ function generateUUID(): string {
 }
 
 /**
+ * Backs up the current client_id before upgrading to authenticated user.
+ * This allows restoring the anonymous session after logout.
+ */
+export function backupClientId(): void {
+  if (typeof window === 'undefined') return
+
+  const currentId = localStorage.getItem(CLIENT_ID_KEY)
+  if (currentId) {
+    localStorage.setItem(BACKUP_CLIENT_ID_KEY, currentId)
+  }
+}
+
+/**
+ * Restores the backed up client_id after logout.
+ * Returns the session to the previous anonymous state.
+ *
+ * @param shouldReload - If true, triggers a page reload after restoration (default: true)
+ * @returns true if a backup was restored, false otherwise
+ */
+export function restoreClientId(shouldReload: boolean = true): boolean {
+  if (typeof window === 'undefined') return false
+
+  const backupId = localStorage.getItem(BACKUP_CLIENT_ID_KEY)
+  if (backupId) {
+    localStorage.setItem(CLIENT_ID_KEY, backupId)
+    localStorage.removeItem(BACKUP_CLIENT_ID_KEY)
+
+    // Trigger a page reload to ensure all components use the restored client_id
+    if (shouldReload) {
+      window.location.reload()
+    }
+
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Gets the current client_id from localStorage (server-safe).
+ * Returns null if running on server or not yet initialized.
+ */
+export function getClientId(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(CLIENT_ID_KEY)
+}
+
+/**
  * Provider component that manages a persistent client ID for anonymous user tracking.
  *
  * The client ID is stored in localStorage and persists across sessions.
@@ -25,7 +74,9 @@ function generateUUID(): string {
  * before they create an account.
  *
  * When a user signs in, their anonymous data (identified by client_id) can be
- * migrated to their authenticated user account.
+ * migrated to their authenticated user account via backupClientId().
+ *
+ * When a user logs out, their anonymous session can be restored via restoreClientId().
  */
 export function ClientIdProvider({ children }: { children: React.ReactNode }) {
   const [clientId, setClientId] = useState<string | null>(null)

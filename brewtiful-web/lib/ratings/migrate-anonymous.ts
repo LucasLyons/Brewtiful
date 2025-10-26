@@ -36,13 +36,15 @@ export async function migrateAnonymousData(
   clientId: string
 ): Promise<{
   migratedRatings: number
-  migratedSaved: number
+  migratedSavedBeers: number
+  migratedSavedBreweries: number
   errors: string[]
 }> {
   const supabase = await createClient()
   const errors: string[] = []
   let migratedRatings = 0
-  let migratedSaved = 0
+  let migratedSavedBeers = 0
+  let migratedSavedBreweries = 0
 
   try {
     // Migrate ratings from anonymous to authenticated user
@@ -64,25 +66,45 @@ export async function migrateAnonymousData(
   }
 
   try {
-    // Migrate saved items from anonymous to authenticated user
-    const { data: saved, error: savedError } = await supabase
-      .from('user_saved')
+    // Migrate saved beers from anonymous to authenticated user
+    const { data: savedBeers, error: savedBeersError } = await supabase
+      .from('user_saved_beers')
       .update({ user_id: userId })
-      .eq('user_id', clientId) // user_saved might be using client_id in user_id field
+      .is('user_id', null)
       .select()
 
-    if (savedError) {
-      errors.push(`Saved items migration error: ${savedError.message}`)
+    if (savedBeersError) {
+      errors.push(`Saved beers migration error: ${savedBeersError.message}`)
     } else {
-      migratedSaved = saved?.length || 0
+      migratedSavedBeers = savedBeers?.length || 0
     }
   } catch (error) {
-    errors.push(`Saved items migration exception: ${error}`)
+    errors.push(`Saved beers migration exception: ${error}`)
+  }
+
+  try {
+    // Migrate saved breweries from anonymous to authenticated user
+    const { data: savedBreweries, error: savedBreweriesError } = await supabase
+      .from('user_saved_breweries')
+      .update({ user_id: userId })
+      .is('user_id', null)
+      .select()
+
+    if (savedBreweriesError) {
+      errors.push(
+        `Saved breweries migration error: ${savedBreweriesError.message}`
+      )
+    } else {
+      migratedSavedBreweries = savedBreweries?.length || 0
+    }
+  } catch (error) {
+    errors.push(`Saved breweries migration exception: ${error}`)
   }
 
   return {
     migratedRatings,
-    migratedSaved,
+    migratedSavedBeers,
+    migratedSavedBreweries,
     errors,
   }
 }
@@ -104,7 +126,8 @@ export async function migrateAnonymousDataServiceRole(
   clientId: string
 ): Promise<{
   migratedRatings: number
-  migratedSaved: number
+  migratedSavedBeers: number
+  migratedSavedBreweries: number
   errors: string[]
 }> {
   // This would require setting up a service role client

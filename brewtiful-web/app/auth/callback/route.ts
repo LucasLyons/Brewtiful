@@ -9,9 +9,19 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!error && data.user) {
+      // Check if this is a first-time login by checking if user has any existing ratings
+      // (If they have ratings, they've logged in before and migration already happened)
+      const { data: existingRatings } = await supabase
+        .from('user_ratings')
+        .select('beer_id')
+        .eq('user_id', data.user.id)
+        .limit(1);
+
+      const isFirstLogin = !existingRatings || existingRatings.length === 0;
+
       // Determine the correct redirect URL based on environment
       let redirectUrl: string;
 
@@ -19,14 +29,26 @@ export async function GET(request: NextRequest) {
       const isLocalhost = request.headers.get("host")?.includes("localhost");
 
       if (isLocalhost) {
-        // Local development - redirect to localhost
+        // Local development
         const protocol = request.headers.get("x-forwarded-proto") || "http";
         const host = request.headers.get("host");
-        redirectUrl = `${protocol}://${host}${next}`;
+
+        if (isFirstLogin) {
+          // First login - redirect to migration page
+          redirectUrl = `${protocol}://${host}/auth/migrate?next=${encodeURIComponent(next)}`;
+        } else {
+          // Subsequent login - redirect directly to destination
+          redirectUrl = `${protocol}://${host}${next}`;
+        }
       } else {
-        // Production - use the production domain
-        // Force redirect to brewtiful.vercel.app instead of preview URLs
-        redirectUrl = `https://brewtiful.vercel.app${next}`;
+        // Production
+        if (isFirstLogin) {
+          // First login - redirect to migration page
+          redirectUrl = `https://brewtiful.vercel.app/auth/migrate?next=${encodeURIComponent(next)}`;
+        } else {
+          // Subsequent login - redirect directly to destination
+          redirectUrl = `https://brewtiful.vercel.app${next}`;
+        }
       }
 
       return NextResponse.redirect(redirectUrl);
