@@ -23,17 +23,11 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // IMPORTANT: Do NOT run code between createServerClient and supabase.auth.getUser()
+  // A simple mistake could make it very hard to debug issues with users being randomly logged out.
 
-  if (!user) {
-    const { error } = await supabase.auth.signInAnonymously()
-    if (error) {
-      console.error('Anonymous sign-in failed:', error)
-    }
-    // Refresh the session to trigger cookie setting
-    await supabase.auth.getSession()
-  }
-
+  // Refresh the session to prevent random logouts
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }
