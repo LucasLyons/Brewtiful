@@ -132,27 +132,70 @@ export function BeerRatingButton({
 
   return (
     <TooltipProvider>
-      <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+      {!user ? (
+        <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+          <Popover open={isOpen} onOpenChange={handleOpenChange}>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center justify-center transition-transform hover:scale-110',
+                    className
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation() // Prevent triggering row click if in a clickable row
+                  }}
+                >
+                  {rating !== null ? (
+                    <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                  ) : (
+                    <Star className="h-5 w-5 text-yellow-400" />
+                  )}
+                </button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <PopoverContent className="w-auto p-4" align="center">
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Rate this beer</div>
+                <StarRating
+                  initialRating={rating}
+                  onRate={handleRate}
+                  size="lg"
+                />
+                {rating !== null && (
+                  <button
+                    onClick={handleRemoveRating}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Remove rating
+                  </button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <TooltipContent>
+            <p>Log in to rate beers!</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
         <Popover open={isOpen} onOpenChange={handleOpenChange}>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <button
-                className={cn(
-                  'flex items-center justify-center transition-transform hover:scale-110',
-                  className
-                )}
-                onClick={(e) => {
-                  e.stopPropagation() // Prevent triggering row click if in a clickable row
-                }}
-              >
-                {rating !== null ? (
-                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                ) : (
-                  <Star className="h-5 w-5 text-yellow-400" />
-                )}
-              </button>
-            </PopoverTrigger>
-          </TooltipTrigger>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                'flex items-center justify-center transition-transform hover:scale-110',
+                className
+              )}
+              onClick={(e) => {
+                e.stopPropagation() // Prevent triggering row click if in a clickable row
+              }}
+            >
+              {rating !== null ? (
+                <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+              ) : (
+                <Star className="h-5 w-5 text-yellow-400" />
+              )}
+            </button>
+          </PopoverTrigger>
           <PopoverContent className="w-auto p-4" align="center">
             <div className="space-y-3">
               <div className="text-sm font-medium">Rate this beer</div>
@@ -172,12 +215,7 @@ export function BeerRatingButton({
             </div>
           </PopoverContent>
         </Popover>
-        {!user && (
-          <TooltipContent>
-            <p>Log in to rate beers!</p>
-          </TooltipContent>
-        )}
-      </Tooltip>
+      )}
     </TooltipProvider>
   )
 }

@@ -66,15 +66,15 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beer.beer_id, brewery]);
 
+  const handleDisabledClick = () => {
+    setShowError(true);
+    setTimeout(() => {
+      setShowError(false);
+    }, 3000);
+  };
+
   const handleRate = async (newRating: number) => {
     if (!user || !brewery) {
-      // Show error text for unauthenticated users
-      if (!user) {
-        setShowError(true);
-        setTimeout(() => {
-          setShowError(false);
-        }, 3000);
-      }
       return;
     }
 
@@ -87,7 +87,6 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
       });
 
       setRating(newRating);
-      setShowError(false); // Clear any error state
     } catch (error) {
       console.error('Failed to submit rating:', error);
     }
@@ -124,6 +123,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
             onRate={handleRate}
             size="lg"
             disabled={!user}
+            onDisabledClick={handleDisabledClick}
           />
           {!user && showError && (
             <p className="text-sm text-red-600 dark:text-red-500">

@@ -10,6 +10,7 @@ interface StarRatingProps {
   size?: 'sm' | 'md' | 'lg'
   readonly?: boolean
   disabled?: boolean
+  onDisabledClick?: () => void
   className?: string
 }
 
@@ -27,6 +28,7 @@ interface StarRatingProps {
  * @param size - Star size variant (sm: 16px, md: 20px, lg: 24px)
  * @param readonly - If true, shows rating without interaction
  * @param disabled - If true, prevents all interactions (no hover, no click)
+ * @param onDisabledClick - Callback when clicking while disabled
  * @param className - Additional CSS classes
  */
 export function StarRating({
@@ -35,6 +37,7 @@ export function StarRating({
   size = 'md',
   readonly = false,
   disabled = false,
+  onDisabledClick,
   className
 }: StarRatingProps) {
   const [rating, setRating] = useState<number | null>(initialRating)
@@ -108,7 +111,10 @@ export function StarRating({
             )}
             onMouseMove={(e) => handleMouseMove(index, e)}
             onClick={(e) => {
-              if (disabled) return
+              if (disabled) {
+                onDisabledClick?.()
+                return
+              }
               const rect = e.currentTarget.getBoundingClientRect()
               const x = e.clientX - rect.left
               const isLeftHalf = x < rect.width / 2

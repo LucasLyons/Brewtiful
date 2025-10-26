@@ -119,7 +119,7 @@ export function BeerCard({
 }: BeerCardProps) {
   const [rating, setRating] = useState<number | null>(initialRating ?? null);
   const [user, setUser] = useState<User | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showError, setShowError] = useState(false);
   const supabase = createClient();
 
   // Fetch user and rating on mount (only if not pre-fetched)
@@ -144,13 +144,15 @@ export function BeerCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beerId, breweryId, initialRating]);
 
+  const handleDisabledClick = () => {
+    setShowError(true);
+    setTimeout(() => {
+      setShowError(false);
+    }, 3000);
+  };
+
   const handleRate = async (newRating: number) => {
     if (!user) {
-      // Show tooltip for unauthenticated users
-      setShowTooltip(true);
-      setTimeout(() => {
-        setShowTooltip(false);
-      }, 2000);
       return;
     }
 
@@ -264,23 +266,19 @@ export function BeerCard({
             </Badge>
 
             <div className="flex flex-col gap-2 text-sm">
-              <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
-                <TooltipTrigger asChild>
-                  <div>
-                    <StarRating
-                      initialRating={rating}
-                      onRate={handleRate}
-                      size="sm"
-                    />
-                  </div>
-                </TooltipTrigger>
-                {!user && (
-                  <TooltipContent>
-                    <p>Log in to rate beers!</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-              {rating !== null && (
+              <StarRating
+                initialRating={rating}
+                onRate={handleRate}
+                size="sm"
+                disabled={!user}
+                onDisabledClick={handleDisabledClick}
+              />
+              {!user && showError && (
+                <p className="text-sm text-red-600 dark:text-red-500">
+                  Please log in to rate
+                </p>
+              )}
+              {rating !== null && user && (
                 <button
                   onClick={handleRemoveRating}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
