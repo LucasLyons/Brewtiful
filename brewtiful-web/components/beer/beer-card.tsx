@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Beer, MapPin, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
+import { SaveBeerButton } from "@/components/shared/save-beer-button";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
 import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
 import { useClientId } from '@/components/providers/client-id-provider';
@@ -25,6 +26,8 @@ interface BeerCardProps {
   city?: string;
   description?: string;
   active?: 'Active' | 'Inactive' | 'Unknown';
+  isSaved?: boolean;
+  initialRating?: number | null;
 }
 
 function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
@@ -111,22 +114,24 @@ export function BeerCard({
   country,
   city,
   description,
-  active = 'Active'
+  active = 'Active',
+  isSaved,
+  initialRating
 }: BeerCardProps) {
-  const [rating, setRating] = useState<number | null>(null);
+  const [rating, setRating] = useState<number | null>(initialRating ?? null);
   const [user, setUser] = useState<User | null>(null);
   const clientId = useClientId();
   const supabase = createClient();
 
-  // Fetch user and rating on mount
+  // Fetch user and rating on mount (only if not pre-fetched)
   useEffect(() => {
     const fetchData = async () => {
       // Get current user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
 
-      // Fetch rating if we have clientId
-      if (clientId) {
+      // Fetch rating if not pre-fetched and we have clientId
+      if (initialRating === undefined && clientId) {
         const userRating = await getUserRating(
           parseInt(beerId),
           breweryId,
@@ -139,7 +144,7 @@ export function BeerCard({
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beerId, breweryId, clientId]);
+  }, [beerId, breweryId, clientId, initialRating]);
 
   const handleRate = async (newRating: number) => {
     if (!clientId) {
@@ -193,6 +198,7 @@ export function BeerCard({
               </Link>
             </CardTitle>
             <div className="flex items-center gap-2 shrink-0">
+              <SaveBeerButton beerId={parseInt(beerId)} breweryId={breweryId} initialIsSaved={isSaved} />
               <Badge variant="secondary">
                 {abv}%
               </Badge>

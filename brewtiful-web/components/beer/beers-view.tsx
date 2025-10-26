@@ -24,9 +24,11 @@ interface Beer {
 interface BeersViewProps {
   beers: Beer[];
   paginationTop?: React.ReactNode;
+  savedBeerIds?: Set<number>;
+  userRatings?: Map<number, number>;
 }
 
-export function BeersView({ beers, paginationTop }: BeersViewProps) {
+export function BeersView({ beers, paginationTop, savedBeerIds, userRatings }: BeersViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -97,11 +99,13 @@ export function BeersView({ beers, paginationTop }: BeersViewProps) {
               city={beer.brewery.city}
               description={beer.description}
               active={beer.active}
+              isSaved={savedBeerIds?.has(parseInt(beer.beer_id))}
+              initialRating={userRatings?.get(parseInt(beer.beer_id)) ?? null}
             />
           ))}
         </div>
       ) : (
-        <BeerTable beers={beers} />
+        <BeerTable beers={beers} savedBeerIds={savedBeerIds} userRatings={userRatings} />
       )}
     </>
   );

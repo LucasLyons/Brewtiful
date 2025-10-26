@@ -3,6 +3,8 @@ import { BeersView } from '@/components/beer/beers-view';
 import { BeersPagination } from '@/components/beer/beers-pagination';
 import { BeersPageLayout } from '@/components/beer/beers-page-layout';
 import { SortOption, SortDirection } from '@/components/beer/beer-filters-sidebar';
+import { getSavedBeerIds } from '@/lib/saved/get-saved-items';
+import { getUserRatingsBulk } from '@/lib/ratings/get-ratings-bulk';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -30,6 +32,10 @@ interface BeersPageProps {
 export default async function BeersPage({ searchParams }: BeersPageProps) {
   const supabase = await createClient();
   const params = await searchParams;
+
+  // Fetch saved beer IDs and ratings for the current user (bulk queries)
+  const savedBeerIds = await getSavedBeerIds();
+  const userRatings = await getUserRatingsBulk();
 
   // Get page from URL params, default to 1
   const currentPage = Number(params.page) || 1;
@@ -420,6 +426,8 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
       </div>
       <BeersView
         beers={filteredBeers}
+        savedBeerIds={savedBeerIds}
+        userRatings={userRatings}
         paginationTop={
           <BeersPagination
             currentPage={currentPage}

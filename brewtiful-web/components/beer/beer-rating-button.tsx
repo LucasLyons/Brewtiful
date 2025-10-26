@@ -15,6 +15,7 @@ interface BeerRatingButtonProps {
   beerId: number
   breweryId: number
   className?: string
+  initialRating?: number | null
 }
 
 /**
@@ -26,31 +27,37 @@ interface BeerRatingButtonProps {
  * - Supports both authenticated and anonymous users
  * - Automatically fetches and updates rating state
  *
+ * Performance:
+ * - Pass initialRating prop to avoid N+1 queries when rendering lists
+ * - If not provided, will fetch rating on mount (slower)
+ *
  * @param beerId - The beer ID being rated
  * @param breweryId - The brewery ID (required for user_ratings table)
  * @param className - Additional CSS classes
+ * @param initialRating - Pre-fetched rating value (optional, recommended for lists)
  */
 export function BeerRatingButton({
   beerId,
   breweryId,
-  className
+  className,
+  initialRating
 }: BeerRatingButtonProps) {
-  const [rating, setRating] = useState<number | null>(null)
+  const [rating, setRating] = useState<number | null>(initialRating ?? null)
   const [user, setUser] = useState<User | null>(null)
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(initialRating === undefined)
   const clientId = useClientId()
   const supabase = createClient()
 
-  // Fetch user and rating on mount
+  // Fetch user and rating on mount (only if not pre-fetched)
   useEffect(() => {
     const fetchData = async () => {
       // Get current user
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       setUser(currentUser)
 
-      // Fetch rating if we have clientId
-      if (clientId) {
+      // Fetch rating if not pre-fetched and we have clientId
+      if (initialRating === undefined && clientId) {
         const userRating = await getUserRating(
           beerId,
           breweryId,
@@ -65,7 +72,7 @@ export function BeerRatingButton({
 
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beerId, breweryId, clientId])
+  }, [beerId, breweryId, clientId, initialRating])
 
   const handleRate = async (newRating: number) => {
     if (!clientId) {

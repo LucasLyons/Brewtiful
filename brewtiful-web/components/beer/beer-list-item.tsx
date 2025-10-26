@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Beer, MapPin } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { BeerRatingButton } from "@/components/beer/beer-rating-button";
+import { SaveBeerButton } from "@/components/shared/save-beer-button";
 
 interface BeerListItemProps {
   beerId: string;
@@ -19,6 +20,8 @@ interface BeerListItemProps {
   city?: string;
   description?: string;
   active?: 'Active' | 'Inactive' | 'Unknown';
+  isSaved?: boolean;
+  initialRating?: number | null;
 }
 
 function TruncatedText({
@@ -68,11 +71,13 @@ export function BeerListItem({
   country,
   city,
   description,
-  active = 'Active'
+  active = 'Active',
+  isSaved,
+  initialRating
 }: BeerListItemProps) {
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-13 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+      <div className="grid grid-cols-14 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-2 flex items-center min-w-0">
           <Link
@@ -176,7 +181,12 @@ export function BeerListItem({
 
         {/* Rating */}
         <div className="col-span-1 flex items-center justify-center">
-          <BeerRatingButton beerId={parseInt(beerId)} breweryId={breweryId} />
+          <BeerRatingButton beerId={parseInt(beerId)} breweryId={breweryId} initialRating={initialRating} />
+        </div>
+
+        {/* Save */}
+        <div className="col-span-1 flex items-center justify-center">
+          <SaveBeerButton beerId={parseInt(beerId)} breweryId={breweryId} initialIsSaved={isSaved} />
         </div>
       </div>
     </TooltipProvider>

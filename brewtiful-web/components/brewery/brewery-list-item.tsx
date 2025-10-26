@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MapPin, Building2 } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
+import { SaveBreweryButton } from "@/components/shared/save-brewery-button";
 
 interface BreweryListItemProps {
   breweryId: string;
@@ -12,6 +13,7 @@ interface BreweryListItemProps {
   country?: string;
   provinceOrState?: string;
   city?: string;
+  isSaved?: boolean;
 }
 
 function TruncatedText({
@@ -56,11 +58,12 @@ export function BreweryListItem({
   name,
   country,
   provinceOrState,
-  city
+  city,
+  isSaved
 }: BreweryListItemProps) {
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+      <div className="grid grid-cols-13 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-3 flex items-center min-w-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -112,6 +115,11 @@ export function BreweryListItem({
           ) : (
             <span>-</span>
           )}
+        </div>
+
+        {/* Save */}
+        <div className="col-span-1 flex items-center justify-center">
+          <SaveBreweryButton breweryId={parseInt(breweryId)} initialIsSaved={isSaved} />
         </div>
       </div>
     </TooltipProvider>

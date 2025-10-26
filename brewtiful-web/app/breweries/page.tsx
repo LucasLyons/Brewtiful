@@ -3,6 +3,7 @@ import { BreweriesView } from '@/components/brewery/breweries-view';
 import { BreweriesPageLayout } from '@/components/brewery/breweries-page-layout';
 import { BreweriesPagination } from '@/components/brewery/breweries-pagination';
 import { BrewerySortOption, SortDirection } from '@/components/brewery/brewery-filters-sidebar';
+import { getSavedBreweryIds } from '@/lib/saved/get-saved-items';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -24,6 +25,9 @@ interface BreweriesPageProps {
 export default async function BreweriesPage({ searchParams }: BreweriesPageProps) {
   const supabase = await createClient();
   const params = await searchParams;
+
+  // Fetch saved brewery IDs for the current user (single bulk query)
+  const savedBreweryIds = await getSavedBreweryIds();
 
   // Get page from URL params, default to 1
   const currentPage = Number(params.page) || 1;
@@ -194,6 +198,7 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
       </div>
       <BreweriesView
         breweries={breweries}
+        savedBreweryIds={savedBreweryIds}
         paginationTop={
           <BreweriesPagination
             currentPage={currentPage}

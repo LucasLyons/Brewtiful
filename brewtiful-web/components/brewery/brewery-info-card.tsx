@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Building2, Globe } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
+import { SaveBreweryButton } from "@/components/shared/save-brewery-button";
 
 interface Brewery {
   brewery_id: string;
@@ -17,16 +18,20 @@ interface Brewery {
 
 interface BreweryInfoCardProps {
   brewery: Brewery;
+  isSaved?: boolean;
 }
 
-export function BreweryInfoCard({ brewery }: BreweryInfoCardProps) {
+export function BreweryInfoCard({ brewery, isSaved }: BreweryInfoCardProps) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-3xl">
-          <Building2 className="h-8 w-8" />
-          {brewery.name}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2 text-3xl">
+            <Building2 className="h-8 w-8" />
+            {brewery.name}
+          </CardTitle>
+          <SaveBreweryButton breweryId={parseInt(brewery.brewery_id)} initialIsSaved={isSaved} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Description */}

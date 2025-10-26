@@ -17,13 +17,15 @@ interface Beer {
 
 interface BeerTableProps {
   beers: Beer[];
+  savedBeerIds?: Set<number>;
+  userRatings?: Map<number, number>;
 }
 
-export function BeerTable({ beers }: BeerTableProps) {
+export function BeerTable({ beers, savedBeerIds, userRatings }: BeerTableProps) {
   return (
     <div className="rounded-lg border bg-card shadow">
       {/* Table Header */}
-      <div className="grid grid-cols-13 gap-4 px-4 py-3 bg-muted/50 border-b font-medium text-sm">
+      <div className="grid grid-cols-14 gap-4 px-4 py-3 bg-muted/50 border-b font-medium text-sm">
         <div className="col-span-2">Name</div>
         <div className="col-span-2">Brewery</div>
         <div className="col-span-2">Style</div>
@@ -33,6 +35,7 @@ export function BeerTable({ beers }: BeerTableProps) {
         <div className="col-span-1">City</div>
         <div className="col-span-2">Description</div>
         <div className="col-span-1 text-center">Rating</div>
+        <div className="col-span-1 text-center">Save</div>
       </div>
 
       {/* Table Body */}
@@ -50,6 +53,8 @@ export function BeerTable({ beers }: BeerTableProps) {
             city={beer.brewery.city}
             description={beer.description}
             active={beer.active}
+            isSaved={savedBeerIds?.has(parseInt(beer.beer_id))}
+            initialRating={userRatings?.get(parseInt(beer.beer_id)) ?? null}
           />
         ))}
       </div>
