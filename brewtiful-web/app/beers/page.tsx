@@ -3,6 +3,9 @@ import { BeersView } from '@/components/beer/beers-view';
 import { BeersPagination } from '@/components/beer/beers-pagination';
 import { BeersPageLayout } from '@/components/beer/beers-page-layout';
 import { SortOption, SortDirection } from '@/components/beer/beer-filters-sidebar';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 
 const ITEMS_PER_PAGE = 24;
@@ -245,7 +248,15 @@ export default async function BeersPage({ searchParams }: BeersPageProps) {
         availableLocations={[]}
         availableCities={[]}
       >
-        <p className="text-muted-foreground">No beers found.</p>
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <p className="text-muted-foreground text-lg">No beers found.</p>
+          <Button asChild variant="outline">
+            <Link href="/beers">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to all beers
+            </Link>
+          </Button>
+        </div>
       </BeersPageLayout>
     );
   }

@@ -3,6 +3,9 @@ import { BreweriesView } from '@/components/brewery/breweries-view';
 import { BreweriesPageLayout } from '@/components/brewery/breweries-page-layout';
 import { BreweriesPagination } from '@/components/brewery/breweries-pagination';
 import { BrewerySortOption, SortDirection } from '@/components/brewery/brewery-filters-sidebar';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 24;
 
@@ -111,8 +114,15 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
         availableCities={[]}
         availableProvinceOrStates={[]}
       >
-        <h1 className="text-4xl font-bold mb-2">Discover Breweries</h1>
-        <p className="text-muted-foreground">No breweries found.</p>
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <p className="text-muted-foreground text-lg">No breweries found.</p>
+          <Button asChild variant="outline">
+            <Link href="/breweries">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to all breweries
+            </Link>
+          </Button>
+        </div>
       </BreweriesPageLayout>
     );
   }
