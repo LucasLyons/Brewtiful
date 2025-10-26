@@ -11,7 +11,6 @@ import { StarRating } from "@/components/shared/star-rating";
 import { SaveBeerButton } from "@/components/shared/save-beer-button";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
 import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
-import { useClientId } from '@/components/providers/client-id-provider';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -120,7 +119,7 @@ export function BeerCard({
 }: BeerCardProps) {
   const [rating, setRating] = useState<number | null>(initialRating ?? null);
   const [user, setUser] = useState<User | null>(null);
-  const clientId = useClientId();
+  const [showTooltip, setShowTooltip] = useState(false);
   const supabase = createClient();
 
   // Fetch user and rating on mount (only if not pre-fetched)
@@ -130,13 +129,12 @@ export function BeerCard({
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
 
-      // Fetch rating if not pre-fetched and we have clientId
-      if (initialRating === undefined && clientId) {
+      // Fetch rating if not pre-fetched and user is authenticated
+      if (initialRating === undefined && currentUser) {
         const userRating = await getUserRating(
           parseInt(beerId),
           breweryId,
-          currentUser?.id || null,
-          clientId
+          currentUser.id
         );
         setRating(userRating);
       }
@@ -144,11 +142,15 @@ export function BeerCard({
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beerId, breweryId, clientId, initialRating]);
+  }, [beerId, breweryId, initialRating]);
 
   const handleRate = async (newRating: number) => {
-    if (!clientId) {
-      console.error('Client ID not available');
+    if (!user) {
+      // Show tooltip for unauthenticated users
+      setShowTooltip(true);
+      setTimeout(() => {
+        setShowTooltip(false);
+      }, 2000);
       return;
     }
 
@@ -157,8 +159,7 @@ export function BeerCard({
         beerId: parseInt(beerId),
         breweryId,
         rating: newRating,
-        userId: user?.id || null,
-        clientId
+        userId: user.id
       });
 
       setRating(newRating);
@@ -168,14 +169,13 @@ export function BeerCard({
   };
 
   const handleRemoveRating = async () => {
-    if (!clientId) return;
+    if (!user) return;
 
     try {
       await removeRating({
         beerId: parseInt(beerId),
         breweryId,
-        userId: user?.id || null,
-        clientId
+        userId: user.id
       });
 
       setRating(null);
@@ -264,11 +264,22 @@ export function BeerCard({
             </Badge>
 
             <div className="flex flex-col gap-2 text-sm">
-              <StarRating
-                initialRating={rating}
-                onRate={handleRate}
-                size="sm"
-              />
+              <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+                <TooltipTrigger asChild>
+                  <div>
+                    <StarRating
+                      initialRating={rating}
+                      onRate={handleRate}
+                      size="sm"
+                    />
+                  </div>
+                </TooltipTrigger>
+                {!user && (
+                  <TooltipContent>
+                    <p>Log in to rate beers!</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
               {rating !== null && (
                 <button
                   onClick={handleRemoveRating}

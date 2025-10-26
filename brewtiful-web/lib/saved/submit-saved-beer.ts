@@ -6,7 +6,6 @@ export interface SaveBeerParams {
   beerId: number
   breweryId: number
   userId: string
-  clientId: string
 }
 
 /**
@@ -18,22 +17,19 @@ export interface SaveBeerParams {
  * @param params.beerId - The beer being saved
  * @param params.breweryId - The brewery that makes the beer
  * @param params.userId - User UUID (required for authenticated users)
- * @param params.clientId - Client ID from localStorage (required for event tracking)
  *
  * @returns Promise resolving to the saved beer data
  * @throws Error if save operation fails
  *
  * @example
  * ```tsx
- * const clientId = useClientId()
  * const { data: { user } } = await supabase.auth.getUser()
  *
  * if (user) {
  *   await saveBeer({
  *     beerId: 123,
  *     breweryId: 456,
- *     userId: user.id,
- *     clientId
+ *     userId: user.id
  *   })
  * }
  * ```
@@ -41,8 +37,7 @@ export interface SaveBeerParams {
 export async function saveBeer({
   beerId,
   breweryId,
-  userId,
-  clientId
+  userId
 }: SaveBeerParams) {
   const supabase = createClient()
 
@@ -70,7 +65,6 @@ export async function saveBeer({
       user_id: userId,
       beer_id: beerId,
       brewery_id: breweryId,
-      client_id: clientId,
       metadata: {
         timestamp: new Date().toISOString()
       }
@@ -94,8 +88,7 @@ export async function saveBeer({
 export async function unsaveBeer({
   beerId,
   breweryId,
-  userId,
-  clientId
+  userId
 }: SaveBeerParams) {
   const supabase = createClient()
 
@@ -120,7 +113,6 @@ export async function unsaveBeer({
       user_id: userId,
       beer_id: beerId,
       brewery_id: breweryId,
-      client_id: clientId,
       metadata: {
         timestamp: new Date().toISOString()
       }

@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
 import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
-import { useClientId } from '@/components/providers/client-id-provider';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -42,7 +42,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
 
   const [rating, setRating] = useState<number | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const clientId = useClientId();
+  const [showTooltip, setShowTooltip] = useState(false);
   const supabase = createClient();
 
   // Fetch user and rating on mount
@@ -52,13 +52,12 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
 
-      // Fetch rating if we have clientId and brewery
-      if (clientId && brewery) {
+      // Fetch rating if user is authenticated and brewery exists
+      if (currentUser && brewery) {
         const userRating = await getUserRating(
           beer.beer_id,
           brewery.brewery_id,
-          currentUser?.id || null,
-          clientId
+          currentUser.id
         );
         setRating(userRating);
       }
@@ -66,11 +65,17 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beer.beer_id, brewery, clientId]);
+  }, [beer.beer_id, brewery]);
 
   const handleRate = async (newRating: number) => {
-    if (!clientId || !brewery) {
-      console.error('Client ID or brewery not available');
+    if (!user || !brewery) {
+      // Show tooltip for unauthenticated users
+      if (!user) {
+        setShowTooltip(true);
+        setTimeout(() => {
+          setShowTooltip(false);
+        }, 2000);
+      }
       return;
     }
 
@@ -79,8 +84,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
         beerId: beer.beer_id,
         breweryId: brewery.brewery_id,
         rating: newRating,
-        userId: user?.id || null,
-        clientId
+        userId: user.id
       });
 
       setRating(newRating);
@@ -90,14 +94,13 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
   };
 
   const handleRemoveRating = async () => {
-    if (!clientId || !brewery) return;
+    if (!user || !brewery) return;
 
     try {
       await removeRating({
         beerId: beer.beer_id,
         breweryId: brewery.brewery_id,
-        userId: user?.id || null,
-        clientId
+        userId: user.id
       });
 
       setRating(null);
@@ -116,11 +119,24 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
           </CardTitle>
         </div>
         <div className="pt-4 flex flex-col gap-2">
-          <StarRating
-            initialRating={rating}
-            onRate={handleRate}
-            size="lg"
-          />
+          <TooltipProvider>
+            <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
+              <TooltipTrigger asChild>
+                <div>
+                  <StarRating
+                    initialRating={rating}
+                    onRate={handleRate}
+                    size="lg"
+                  />
+                </div>
+              </TooltipTrigger>
+              {!user && (
+                <TooltipContent>
+                  <p>Log in to rate beers!</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
           {rating !== null && (
             <button
               onClick={handleRemoveRating}

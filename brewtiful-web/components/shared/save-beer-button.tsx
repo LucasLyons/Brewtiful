@@ -5,7 +5,6 @@ import { Bookmark } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { isBeerSaved } from '@/lib/saved/get-user-saved'
 import { saveBeer, unsaveBeer } from '@/lib/saved/submit-saved-beer'
-import { useClientId } from '@/components/providers/client-id-provider'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { User } from '@supabase/supabase-js'
@@ -45,7 +44,6 @@ export function SaveBeerButton({
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(initialIsSaved === undefined)
   const [showTooltip, setShowTooltip] = useState(false)
-  const clientId = useClientId()
   const supabase = createClient()
 
   // Fetch user and saved state on mount (only if not pre-fetched)
@@ -80,19 +78,13 @@ export function SaveBeerButton({
       return
     }
 
-    if (!clientId) {
-      console.error('Client ID not available')
-      return
-    }
-
     try {
       if (isSaved) {
         // Unsave the beer
         await unsaveBeer({
           beerId,
           breweryId,
-          userId: user.id,
-          clientId
+          userId: user.id
         })
         setIsSaved(false)
       } else {
@@ -100,8 +92,7 @@ export function SaveBeerButton({
         await saveBeer({
           beerId,
           breweryId,
-          userId: user.id,
-          clientId
+          userId: user.id
         })
         setIsSaved(true)
       }

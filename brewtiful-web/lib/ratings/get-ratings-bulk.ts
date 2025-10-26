@@ -8,9 +8,7 @@ import { createClient } from '@/lib/supabase/server'
  * This function is designed to be called once per page to avoid N+1 queries.
  * Returns a Map of beer_id -> rating for O(1) lookup performance.
  *
- * Handles both authenticated and anonymous users:
- * - Authenticated users: Filters by user_id from session
- * - Anonymous users: Returns empty Map (no client_id available server-side)
+ * Only works for authenticated users. Returns empty Map for unauthenticated users.
  *
  * @returns Promise resolving to a Map of beer IDs to rating values
  */
@@ -20,8 +18,7 @@ export async function getUserRatingsBulk(): Promise<Map<number, number>> {
   // Get current user from session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // For anonymous users, we can't get ratings server-side (no client_id)
-  // Ratings will be fetched client-side for anonymous users
+  // Only authenticated users can have ratings
   if (!user) {
     return new Map()
   }

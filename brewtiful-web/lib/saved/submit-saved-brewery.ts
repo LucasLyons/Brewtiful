@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 export interface SaveBreweryParams {
   breweryId: number
   userId: string
-  clientId: string
 }
 
 /**
@@ -16,29 +15,25 @@ export interface SaveBreweryParams {
  * @param params - Save brewery parameters
  * @param params.breweryId - The brewery being saved
  * @param params.userId - User UUID (required for authenticated users)
- * @param params.clientId - Client ID from localStorage (required for event tracking)
  *
  * @returns Promise resolving to the saved brewery data
  * @throws Error if save operation fails
  *
  * @example
  * ```tsx
- * const clientId = useClientId()
  * const { data: { user } } = await supabase.auth.getUser()
  *
  * if (user) {
  *   await saveBrewery({
  *     breweryId: 456,
- *     userId: user.id,
- *     clientId
+ *     userId: user.id
  *   })
  * }
  * ```
  */
 export async function saveBrewery({
   breweryId,
-  userId,
-  clientId
+  userId
 }: SaveBreweryParams) {
   const supabase = createClient()
 
@@ -65,7 +60,6 @@ export async function saveBrewery({
       user_id: userId,
       brewery_id: breweryId,
       beer_id: null,
-      client_id: clientId,
       metadata: {
         timestamp: new Date().toISOString()
       }
@@ -88,8 +82,7 @@ export async function saveBrewery({
  */
 export async function unsaveBrewery({
   breweryId,
-  userId,
-  clientId
+  userId
 }: SaveBreweryParams) {
   const supabase = createClient()
 
@@ -113,7 +106,6 @@ export async function unsaveBrewery({
       user_id: userId,
       brewery_id: breweryId,
       beer_id: null,
-      client_id: clientId,
       metadata: {
         timestamp: new Date().toISOString()
       }

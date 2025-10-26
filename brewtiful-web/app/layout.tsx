@@ -6,7 +6,6 @@ import { AuthButton } from "@/components/auth/auth-button";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import BrewtifulLogo from "@/components/layout/brewtiful-logo"
 import { NavigationTabs } from "@/components/layout/navigation-tabs";
-import { ClientIdProvider } from "@/components/providers/client-id-provider";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic'
@@ -42,8 +41,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClientIdProvider>
-            <div className="min-h-screen w-full flex flex-col items-center">
+          <div className="min-h-screen w-full flex flex-col items-center">
             <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
               <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
                 <div className="flex gap-6 items-center">
@@ -75,8 +73,7 @@ export default async function RootLayout({
               </p>
             </footer>
           </div>
-            <Analytics />
-          </ClientIdProvider>
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

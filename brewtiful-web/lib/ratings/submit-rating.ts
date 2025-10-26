@@ -6,47 +6,42 @@ export interface SubmitRatingParams {
   beerId: number
   breweryId: number
   rating: number
-  userId: string | null
-  clientId: string
+  userId: string
 }
 
 /**
  * Submits a beer rating to both the user_ratings and events tables.
  *
- * This function handles both authenticated and anonymous users:
- * - Authenticated users: userId is set, clientId is tracked for migration
- * - Anonymous users: userId is null, clientId is used for filtering
+ * This function only works for authenticated users.
  *
  * @param params - Rating submission parameters
  * @param params.beerId - The beer being rated
  * @param params.breweryId - The brewery that makes the beer
  * @param params.rating - Rating value (0.5 to 5.0 in 0.5 increments)
- * @param params.userId - User UUID (null for anonymous users)
- * @param params.clientId - Client ID from localStorage (required for all users)
+ * @param params.userId - User UUID (required - must be authenticated)
  *
  * @returns Promise resolving to the rating data
  * @throws Error if rating submission fails
  *
  * @example
  * ```tsx
- * const clientId = useClientId()
  * const { data: { user } } = await supabase.auth.getUser()
  *
- * await submitRating({
- *   beerId: 123,
- *   breweryId: 456,
- *   rating: 4.5,
- *   userId: user?.id || null,
- *   clientId
- * })
+ * if (user) {
+ *   await submitRating({
+ *     beerId: 123,
+ *     breweryId: 456,
+ *     rating: 4.5,
+ *     userId: user.id
+ *   })
+ * }
  * ```
  */
 export async function submitRating({
   beerId,
   breweryId,
   rating,
-  userId,
-  clientId
+  userId
 }: SubmitRatingParams) {
   const supabase = createClient()
 
@@ -57,7 +52,7 @@ export async function submitRating({
 
   // Insert or update rating in user_ratings table
   // Using upsert to handle both new ratings and updates
-  // Primary key is (beer_id, brewery_id, client_id) - user_id can be NULL
+  // Primary key is (user_id, beer_id, brewery_id)
   const { data: ratingData, error: ratingError } = await supabase
     .from('user_ratings')
     .upsert(
@@ -65,11 +60,10 @@ export async function submitRating({
         user_id: userId,
         beer_id: beerId,
         brewery_id: breweryId,
-        rating,
-        client_id: clientId
+        rating
       },
       {
-        onConflict: 'beer_id,brewery_id,client_id'
+        onConflict: 'user_id,beer_id,brewery_id'
       }
     )
     .select()
@@ -88,7 +82,6 @@ export async function submitRating({
       user_id: userId,
       beer_id: beerId,
       brewery_id: breweryId,
-      client_id: clientId,
       metadata: {
         rating,
         timestamp: new Date().toISOString()
@@ -113,25 +106,17 @@ export async function submitRating({
 export async function removeRating({
   beerId,
   breweryId,
-  userId,
-  clientId
+  userId
 }: Omit<SubmitRatingParams, 'rating'>) {
   const supabase = createClient()
 
-  // Build delete query based on user authentication state
-  let query = supabase
+  // Delete rating for authenticated user
+  const { error: deleteError } = await supabase
     .from('user_ratings')
     .delete()
     .eq('beer_id', beerId)
     .eq('brewery_id', breweryId)
-
-  if (userId) {
-    query = query.eq('user_id', userId)
-  } else {
-    query = query.is('user_id', null).eq('client_id', clientId)
-  }
-
-  const { error: deleteError } = await query
+    .eq('user_id', userId)
 
   if (deleteError) {
     console.error('Error removing rating:', deleteError)
@@ -146,7 +131,6 @@ export async function removeRating({
       user_id: userId,
       beer_id: beerId,
       brewery_id: breweryId,
-      client_id: clientId,
       metadata: {
         timestamp: new Date().toISOString()
       }
