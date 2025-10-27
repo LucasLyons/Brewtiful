@@ -27,6 +27,7 @@ interface BeerCardProps {
   active?: 'Active' | 'Inactive' | 'Unknown';
   isSaved?: boolean;
   initialRating?: number | null;
+  onRatingChange?: (beerId: number, rating: number | null) => void;
 }
 
 function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
@@ -115,7 +116,8 @@ export function BeerCard({
   description,
   active = 'Active',
   isSaved,
-  initialRating
+  initialRating,
+  onRatingChange
 }: BeerCardProps) {
   const [rating, setRating] = useState<number | null>(initialRating ?? null);
   const [user, setUser] = useState<User | null>(null);
@@ -165,6 +167,11 @@ export function BeerCard({
       });
 
       setRating(newRating);
+
+      // Notify parent component of rating change
+      if (onRatingChange) {
+        onRatingChange(parseInt(beerId), newRating);
+      }
     } catch (error) {
       console.error('Failed to submit rating:', error);
     }
@@ -181,6 +188,11 @@ export function BeerCard({
       });
 
       setRating(null);
+
+      // Notify parent component of rating removal
+      if (onRatingChange) {
+        onRatingChange(parseInt(beerId), null);
+      }
     } catch (error) {
       console.error('Failed to remove rating:', error);
     }
