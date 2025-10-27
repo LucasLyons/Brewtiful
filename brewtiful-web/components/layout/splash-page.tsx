@@ -44,7 +44,7 @@ export function SplashPage() {
             <Compass className="w-10 h-10 text-amber-600 dark:text-amber-500 mx-auto mb-3" />
             <h3 className="font-semibold mb-2">Smart Discovery</h3>
             <p className="text-sm text-muted-foreground">
-              Vector-based search to find beers you'll love.
+              Vector-based search to find beers you&apos;ll love.
             </p>
           </div>
 
