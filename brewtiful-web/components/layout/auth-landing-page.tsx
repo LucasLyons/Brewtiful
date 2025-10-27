@@ -37,18 +37,7 @@ export function AuthLandingPage({ userId }: { userId: string }) {
   const [totalBeers, setTotalBeers] = useState(0)
   const [loading, setLoading] = useState(true)
   const [userRatings, setUserRatings] = useState<Map<number, number>>(new Map())
-  const [ratedBeerIds, setRatedBeerIds] = useState<Set<number>>(new Set())
   const supabase = createClient()
-
-  // Fetch user's rating count
-  const fetchRatingCount = async () => {
-    const { count } = await supabase
-      .from('user_ratings')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-
-    return count ?? 0
-  }
 
   // Fetch popular beers (sorted by scraped_review_count)
   const fetchPopularBeers = async (page: number) => {
@@ -128,17 +117,16 @@ export function AuthLandingPage({ userId }: { userId: string }) {
   const handleRatingChange = (beerId: number, rating: number | null) => {
     console.log('Rating change callback:', beerId, rating)
 
-    if (rating !== null) {
-      // Add to rated beers set
-      setRatedBeerIds(prev => {
-        const newSet = new Set(prev)
-        const wasNew = !newSet.has(beerId)
-        newSet.add(beerId)
+    const hadPreviousRating = userRatings.has(beerId)
 
-        if (wasNew) {
-          // Update count immediately
-          const newCount = newSet.size
-          setRatingCount(newCount)
+    if (rating !== null) {
+      // Update ratings map
+      setUserRatings(prev => new Map(prev).set(beerId, rating))
+
+      // Increment count if this is a new rating
+      if (!hadPreviousRating) {
+        setRatingCount(prev => {
+          const newCount = prev + 1
           console.log('New rating count (client-side):', newCount)
 
           // Check if we hit the threshold
@@ -146,33 +134,26 @@ export function AuthLandingPage({ userId }: { userId: string }) {
             console.log('Hit 5 ratings threshold, refreshing page...')
             window.location.reload()
           }
-        }
 
-        return newSet
-      })
-
-      // Update ratings map
-      setUserRatings(prev => new Map(prev).set(beerId, rating))
+          return newCount
+        })
+      }
     } else {
-      // Remove from rated beers set
-      setRatedBeerIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(beerId)
-
-        // Update count immediately
-        const newCount = newSet.size
-        setRatingCount(newCount)
-        console.log('New rating count after removal (client-side):', newCount)
-
-        return newSet
-      })
-
       // Remove from ratings map
       setUserRatings(prev => {
         const newMap = new Map(prev)
         newMap.delete(beerId)
         return newMap
       })
+
+      // Decrement count if there was a previous rating
+      if (hadPreviousRating) {
+        setRatingCount(prev => {
+          const newCount = prev - 1
+          console.log('New rating count after removal (client-side):', newCount)
+          return newCount
+        })
+      }
     }
   }
 
@@ -186,7 +167,6 @@ export function AuthLandingPage({ userId }: { userId: string }) {
         // Fetch all rated beer IDs first
         const allRatedIds = await fetchAllRatedBeerIds()
         console.log('User has rated', allRatedIds.size, 'beers')
-        setRatedBeerIds(allRatedIds)
         setRatingCount(allRatedIds.size)
 
         // If user has 5+ ratings, redirect will happen in parent
