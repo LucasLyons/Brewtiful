@@ -45,7 +45,7 @@ export async function updateUserEmbeddingOnRate(
   }
 
   // Start with zero vector if user has no embedding yet
-  let currentEmbedding: number[] = userEmbedding?.embedding || createZeroVector(EMBEDDING_DIMENSION)
+  const currentEmbedding: number[] = userEmbedding?.embedding || createZeroVector(EMBEDDING_DIMENSION)
 
   // 2. Fetch the beer's item embedding
   const { data: beerEmbedding, error: beerError } = await supabase

@@ -1,26 +1,40 @@
 /**
  * Vector math utilities for user embeddings
- * Uses pgvector npm package for proper vector handling
+ * Custom implementation for browser + Node.js compatibility
  */
 
-import pgvector from 'pgvector/utils'
+/**
+ * Type representing a vector that can be in various formats
+ */
+type VectorInput = number[] | string | ArrayLike<number>
 
 /**
  * Ensures input is a proper JavaScript array
  * Supabase pgvector embeddings may be returned as strings or special objects
  */
-function ensureArray(vec: any): number[] {
+function ensureArray(vec: VectorInput): number[] {
   if (Array.isArray(vec)) {
     return vec;
   }
   // If it's a pgvector string format like "[1,2,3]"
   if (typeof vec === 'string') {
-    // pgvector.fromSql handles the parsing
+    // Parse pgvector SQL format (e.g., "[1,2,3]" or "(1,2,3)")
     try {
-      return pgvector.fromSql(vec);
-    } catch {
+      const trimmed = vec.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        return JSON.parse(trimmed);
+      }
+      // Handle PostgreSQL array format like "{1,2,3}"
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        return trimmed
+          .slice(1, -1)
+          .split(',')
+          .map((s) => parseFloat(s.trim()));
+      }
       // Fallback to JSON parse
       return JSON.parse(vec);
+    } catch {
+      throw new Error(`Failed to parse vector string: ${vec}`);
     }
   }
   // If it's an array-like object, convert to array
@@ -36,7 +50,7 @@ function ensureArray(vec: any): number[] {
  * @param vec2 - Second vector
  * @returns The sum of the two vectors
  */
-export function addVectors(vec1: any, vec2: any): number[] {
+export function addVectors(vec1: VectorInput, vec2: VectorInput): number[] {
   const v1 = ensureArray(vec1);
   const v2 = ensureArray(vec2);
 
@@ -54,7 +68,7 @@ export function addVectors(vec1: any, vec2: any): number[] {
  * @param vec2 - Second vector (subtrahend)
  * @returns vec1 - vec2
  */
-export function subtractVectors(vec1: any, vec2: any): number[] {
+export function subtractVectors(vec1: VectorInput, vec2: VectorInput): number[] {
   const v1 = ensureArray(vec1);
   const v2 = ensureArray(vec2);
 
@@ -72,7 +86,7 @@ export function subtractVectors(vec1: any, vec2: any): number[] {
  * @param scalar - The scalar multiplier
  * @returns The scaled vector
  */
-export function scaleVector(vec: any, scalar: number): number[] {
+export function scaleVector(vec: VectorInput, scalar: number): number[] {
   const v = ensureArray(vec);
   return v.map((val) => val * scalar);
 }
@@ -85,8 +99,8 @@ export function scaleVector(vec: any, scalar: number): number[] {
  * @returns baseVec + (weight * addVec)
  */
 export function addWeightedVector(
-  baseVec: any,
-  addVec: any,
+  baseVec: VectorInput,
+  addVec: VectorInput,
   weight: number
 ): number[] {
   const weighted = scaleVector(addVec, weight);
@@ -101,8 +115,8 @@ export function addWeightedVector(
  * @returns baseVec - (weight * subVec)
  */
 export function subtractWeightedVector(
-  baseVec: any,
-  subVec: any,
+  baseVec: VectorInput,
+  subVec: VectorInput,
   weight: number
 ): number[] {
   const weighted = scaleVector(subVec, weight);
@@ -124,7 +138,7 @@ export function createZeroVector(dimension: number): number[] {
  * @returns SQL-formatted vector string
  */
 export function toSqlVector(vec: number[]): string {
-  return pgvector.toSql(vec);
+  return JSON.stringify(vec);
 }
 
 /**
@@ -132,6 +146,6 @@ export function toSqlVector(vec: number[]): string {
  * @param vec - The SQL vector string or any vector format
  * @returns JavaScript array
  */
-export function fromSqlVector(vec: any): number[] {
+export function fromSqlVector(vec: VectorInput): number[] {
   return ensureArray(vec);
 }
