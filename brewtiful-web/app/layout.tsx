@@ -71,6 +71,12 @@ export default async function RootLayout({
                   Supabase
                 </a>
               </p>
+              <a
+                href="/privacy"
+                className="hover:underline"
+              >
+                Privacy Policy
+              </a>
             </footer>
           </div>
           <Analytics />
