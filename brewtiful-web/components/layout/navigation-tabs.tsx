@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Building2, User, Sparkles } from "lucide-react";
+import { Home, BookOpen, Building2, Sparkles } from "lucide-react";
 
 export function NavigationTabs() {
   const pathname = usePathname();
