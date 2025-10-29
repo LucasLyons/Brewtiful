@@ -23,7 +23,7 @@ export function BeersPagination({ currentPage, totalPages }: BeersPaginationProp
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    const maxVisible = 5;
+    const maxVisible = 7; // 1, ..., current-1, current, current+1, ..., end
 
     if (totalPages <= maxVisible) {
       // Show all pages if total is small
@@ -34,11 +34,15 @@ export function BeersPagination({ currentPage, totalPages }: BeersPaginationProp
       // Always show first page
       pages.push(1);
 
-      if (currentPage > 3) {
+      // Calculate the range around current page
+      const showLeftEllipsis = currentPage > 3;
+      const showRightEllipsis = currentPage < totalPages - 2;
+
+      if (showLeftEllipsis) {
         pages.push('...');
       }
 
-      // Show pages around current page
+      // Show current-1, current, current+1 (but avoid duplicating first/last page)
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
 
@@ -46,12 +50,14 @@ export function BeersPagination({ currentPage, totalPages }: BeersPaginationProp
         pages.push(i);
       }
 
-      if (currentPage < totalPages - 2) {
+      if (showRightEllipsis) {
         pages.push('...');
       }
 
-      // Always show last page
-      pages.push(totalPages);
+      // Always show last page (if not already shown)
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
     }
 
     return pages;

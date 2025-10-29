@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   adaptiveKMeans,
   recommendFromCentroids,
+  selectDiverseSeeds,
   type BeerEmbedding,
 } from '@/lib/recommendations/kmeans';
 import type {
@@ -65,10 +66,12 @@ export function KMeansRecommendations({
         console.log('Computing clusters for', ratedEmbeddings.length, 'rated beers');
 
         // Phase 1: Fetch initial candidates for cluster quality evaluation
-        const initialK = 5;
-        const initialCentroids = Array(initialK).fill(null).map((_, i) =>
-          ratedEmbeddings[Math.floor(i * ratedEmbeddings.length / initialK)].embedding
-        );
+        // Use k-means++ style selection to pick 5 diverse seed beers
+        const numSeeds = 5;
+        const seedBeers = selectDiverseSeeds(ratedEmbeddings, numSeeds);
+        const seedEmbeddings = seedBeers.map(beer => beer.embedding);
+
+        console.log('Selected', seedBeers.length, 'diverse seed beers for initial candidate fetching');
 
         const initialResponse = await fetch('/api/recommendations/candidates', {
           method: 'POST',
@@ -76,9 +79,9 @@ export function KMeansRecommendations({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            centroids: initialCentroids,
+            centroids: seedEmbeddings,
             userId,
-            beersPerCentroid: 50,
+            beersPerCentroid: 100,
             showInactive: false,
           }),
         });
@@ -88,7 +91,6 @@ export function KMeansRecommendations({
         }
 
         const initialCandidates: CandidateBeer[] = await initialResponse.json();
-        console.log('Fetched initial candidates:', initialCandidates.length);
 
         const initialCandidateEmbeddings: BeerEmbedding[] = initialCandidates.map(
           (beer) => ({
@@ -103,7 +105,7 @@ export function KMeansRecommendations({
           initialCandidateEmbeddings,
           [1, 2, 3, 4, 5],
           5,
-          0.7,
+          0.55,
           12
         );
 
@@ -153,9 +155,6 @@ export function KMeansRecommendations({
     if (!isClusteringDone || !cachedCentroids || cachedCandidates.length === 0) {
       return;
     }
-
-    console.log('Computing page', currentPage, 'from cached candidates');
-
     // Convert candidate beers to BeerEmbedding format
     const candidateEmbeddings: BeerEmbedding[] = cachedCandidates.map(
       (beer) => ({
@@ -173,9 +172,6 @@ export function KMeansRecommendations({
       RECS_PER_PAGE,
       offset
     );
-
-    console.log(`Page ${currentPage}: ${recommendResult.recommendations.length} recommendations, has more: ${recommendResult.hasMore}, total: ${recommendResult.totalAvailable}`);
-
     // Map back to full candidate beer objects
     const recommendedBeers = recommendResult.recommendations
       .map((emb) =>
@@ -187,13 +183,6 @@ export function KMeansRecommendations({
     setHasMore(recommendResult.hasMore);
     setTotalAvailable(recommendResult.totalAvailable);
 
-    console.log('State updated:', {
-      currentPage,
-      recommendationsCount: recommendedBeers.length,
-      hasMore: recommendResult.hasMore,
-      totalAvailable: recommendResult.totalAvailable,
-      shouldShowPagination: recommendResult.totalAvailable > RECS_PER_PAGE
-    });
   }, [currentPage, isClusteringDone, cachedCentroids, cachedCandidates, RECS_PER_PAGE]);
 
   if (isLoading) {
@@ -239,37 +228,123 @@ export function KMeansRecommendations({
             </div>
 
             {/* Pagination Controls */}
-            {totalAvailable > RECS_PER_PAGE && (
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const newPage = Math.max(1, currentPage - 1);
-                    router.push(`/recommendations?page=${newPage}`);
-                  }}
-                  disabled={currentPage <= 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
+            {totalAvailable > RECS_PER_PAGE && (() => {
+              const totalPages = Math.ceil(totalAvailable / RECS_PER_PAGE);
 
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage} of {Math.ceil(totalAvailable / RECS_PER_PAGE)}
+              const getPageNumbers = () => {
+                const pages: (number | string)[] = [];
+                const maxVisible = 7;
+
+                if (totalPages <= maxVisible) {
+                  for (let i = 1; i <= totalPages; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  pages.push(1);
+
+                  const showLeftEllipsis = currentPage > 3;
+                  const showRightEllipsis = currentPage < totalPages - 2;
+
+                  if (showLeftEllipsis) {
+                    pages.push('...');
+                  }
+
+                  const start = Math.max(2, currentPage - 1);
+                  const end = Math.min(totalPages - 1, currentPage + 1);
+
+                  for (let i = start; i <= end; i++) {
+                    pages.push(i);
+                  }
+
+                  if (showRightEllipsis) {
+                    pages.push('...');
+                  }
+
+                  if (totalPages > 1) {
+                    pages.push(totalPages);
+                  }
+                }
+
+                return pages;
+              };
+
+              return (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      router.push(`/recommendations?page=1`);
+                    }}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 -ml-2" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const newPage = Math.max(1, currentPage - 1);
+                      router.push(`/recommendations?page=${newPage}`);
+                    }}
+                    disabled={currentPage <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((page, index) => {
+                      if (page === '...') {
+                        return (
+                          <span key={`ellipsis-${index}`} className="px-2">
+                            ...
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => {
+                            router.push(`/recommendations?page=${page}`);
+                          }}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const newPage = currentPage + 1;
+                      router.push(`/recommendations?page=${newPage}`);
+                    }}
+                    disabled={!hasMore}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      router.push(`/recommendations?page=${totalPages}`);
+                    }}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 -ml-2" />
+                  </Button>
                 </div>
-
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const newPage = currentPage + 1;
-                    router.push(`/recommendations?page=${newPage}`);
-                  }}
-                  disabled={!hasMore}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            )}
+              );
+            })()}
           </>
         )}
       </div>
