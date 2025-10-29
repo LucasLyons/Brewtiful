@@ -15,9 +15,11 @@ interface BreweriesViewProps {
   breweries: Brewery[];
   paginationTop?: React.ReactNode;
   savedBreweryIds?: Set<number>;
+  onBrewerySaved?: (breweryId: number) => void;
+  onBreweryUnsaved?: (breweryId: number) => void;
 }
 
-export function BreweriesView({ breweries, paginationTop, savedBreweryIds }: BreweriesViewProps) {
+export function BreweriesView({ breweries, paginationTop, savedBreweryIds, onBrewerySaved, onBreweryUnsaved }: BreweriesViewProps) {
   return (
     <>
       {/* Header Section with Search */}
@@ -51,7 +53,9 @@ export function BreweriesView({ breweries, paginationTop, savedBreweryIds }: Bre
             country={brewery.country}
             provinceOrState={brewery.province_or_state}
             city={brewery.city}
-            isSaved={savedBreweryIds?.has(parseInt(brewery.brewery_id))}
+            isSaved={savedBreweryIds ? savedBreweryIds.has(parseInt(brewery.brewery_id)) : false}
+            onSaved={onBrewerySaved}
+            onUnsaved={onBreweryUnsaved}
           />
         ))}
       </div>

@@ -14,6 +14,8 @@ interface BreweryListItemProps {
   provinceOrState?: string;
   city?: string;
   isSaved?: boolean;
+  onSaved?: (breweryId: number) => void;
+  onUnsaved?: (breweryId: number) => void;
 }
 
 function TruncatedText({
@@ -108,7 +110,9 @@ export function BreweryListItem({
   country,
   provinceOrState,
   city,
-  isSaved
+  isSaved,
+  onSaved,
+  onUnsaved
 }: BreweryListItemProps) {
   return (
     <TooltipProvider delayDuration={1000}>
@@ -168,7 +172,12 @@ export function BreweryListItem({
 
         {/* Save */}
         <div className="col-span-1 flex items-center justify-center">
-          <SaveBreweryButton breweryId={parseInt(breweryId)} initialIsSaved={isSaved} />
+          <SaveBreweryButton
+            breweryId={parseInt(breweryId)}
+            initialIsSaved={isSaved}
+            onSaved={onSaved}
+            onUnsaved={onUnsaved}
+          />
         </div>
       </div>
     </TooltipProvider>

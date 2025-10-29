@@ -13,6 +13,8 @@ interface SaveBreweryButtonProps {
   breweryId: number
   className?: string
   initialIsSaved?: boolean
+  onSaved?: (breweryId: number) => void
+  onUnsaved?: (breweryId: number) => void
 }
 
 /**
@@ -35,7 +37,9 @@ interface SaveBreweryButtonProps {
 export function SaveBreweryButton({
   breweryId,
   className,
-  initialIsSaved
+  initialIsSaved,
+  onSaved,
+  onUnsaved
 }: SaveBreweryButtonProps) {
   const [isSaved, setIsSaved] = useState(initialIsSaved ?? false)
   const [user, setUser] = useState<User | null>(null)
@@ -75,24 +79,39 @@ export function SaveBreweryButton({
       return
     }
 
+    // Optimistic update - update UI immediately
+    const previousSavedState = isSaved
+
     try {
       if (isSaved) {
-        // Unsave the brewery
+        // Optimistically update UI before database call
+        setIsSaved(false)
+        if (onUnsaved) {
+          onUnsaved(breweryId)
+        }
+
+        // Then update database
         await unsaveBrewery({
           breweryId,
           userId: user.id
         })
-        setIsSaved(false)
       } else {
-        // Save the brewery
+        // Optimistically update UI before database call
+        setIsSaved(true)
+        if (onSaved) {
+          onSaved(breweryId)
+        }
+
+        // Then update database
         await saveBrewery({
           breweryId,
           userId: user.id
         })
-        setIsSaved(true)
       }
     } catch (error) {
       console.error('Failed to toggle save state:', error)
+      // Rollback on error
+      setIsSaved(previousSavedState)
     }
   }
 

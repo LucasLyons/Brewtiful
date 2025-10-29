@@ -26,9 +26,13 @@ interface BeersViewProps {
   paginationTop?: React.ReactNode;
   savedBeerIds?: Set<number>;
   userRatings?: Map<number, number>;
+  onBeerUnrated?: (beerId: number) => void;
+  onBeerSaved?: (beerId: number) => void;
+  onBeerUnsaved?: (beerId: number) => void;
+  onBeerRated?: (beerId: number, rating: number) => void;
 }
 
-export function BeersView({ beers, paginationTop, savedBeerIds, userRatings }: BeersViewProps) {
+export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onBeerUnrated, onBeerSaved, onBeerUnsaved, onBeerRated }: BeersViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -99,13 +103,17 @@ export function BeersView({ beers, paginationTop, savedBeerIds, userRatings }: B
               city={beer.brewery.city}
               description={beer.description}
               active={beer.active}
-              isSaved={savedBeerIds?.has(parseInt(beer.beer_id))}
+              isSaved={savedBeerIds ? savedBeerIds.has(parseInt(beer.beer_id)) : false}
               initialRating={userRatings?.get(parseInt(beer.beer_id)) ?? null}
+              onUnrated={onBeerUnrated}
+              onSaved={onBeerSaved}
+              onUnsaved={onBeerUnsaved}
+              onRated={onBeerRated}
             />
           ))}
         </div>
       ) : (
-        <BeerTable beers={beers} savedBeerIds={savedBeerIds} userRatings={userRatings} />
+        <BeerTable beers={beers} savedBeerIds={savedBeerIds} userRatings={userRatings} onBeerUnrated={onBeerUnrated} onBeerSaved={onBeerSaved} onBeerUnsaved={onBeerUnsaved} onBeerRated={onBeerRated} />
       )}
     </>
   );

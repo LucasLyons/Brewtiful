@@ -19,9 +19,13 @@ interface BeerTableProps {
   beers: Beer[];
   savedBeerIds?: Set<number>;
   userRatings?: Map<number, number>;
+  onBeerUnrated?: (beerId: number) => void;
+  onBeerSaved?: (beerId: number) => void;
+  onBeerUnsaved?: (beerId: number) => void;
+  onBeerRated?: (beerId: number, rating: number) => void;
 }
 
-export function BeerTable({ beers, savedBeerIds, userRatings }: BeerTableProps) {
+export function BeerTable({ beers, savedBeerIds, userRatings, onBeerUnrated, onBeerSaved, onBeerUnsaved, onBeerRated }: BeerTableProps) {
   return (
     <div className="rounded-lg border bg-card shadow">
       {/* Table Header */}
@@ -53,8 +57,12 @@ export function BeerTable({ beers, savedBeerIds, userRatings }: BeerTableProps) 
             city={beer.brewery.city}
             description={beer.description}
             active={beer.active}
-            isSaved={savedBeerIds?.has(parseInt(beer.beer_id))}
+            isSaved={savedBeerIds ? savedBeerIds.has(parseInt(beer.beer_id)) : false}
             initialRating={userRatings?.get(parseInt(beer.beer_id)) ?? null}
+            onUnrated={onBeerUnrated}
+            onSaved={onBeerSaved}
+            onUnsaved={onBeerUnsaved}
+            onRated={onBeerRated}
           />
         ))}
       </div>

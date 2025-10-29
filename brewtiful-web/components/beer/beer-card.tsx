@@ -28,6 +28,10 @@ interface BeerCardProps {
   isSaved?: boolean;
   initialRating?: number | null;
   onRatingChange?: (beerId: number, rating: number | null) => void;
+  onUnrated?: (beerId: number) => void;
+  onSaved?: (beerId: number) => void;
+  onUnsaved?: (beerId: number) => void;
+  onRated?: (beerId: number, rating: number) => void;
 }
 
 function BreweryLink({ brewery, breweryId }: { brewery: string; breweryId: number }) {
@@ -117,7 +121,11 @@ export function BeerCard({
   active = 'Active',
   isSaved,
   initialRating,
-  onRatingChange
+  onRatingChange,
+  onUnrated,
+  onSaved,
+  onUnsaved,
+  onRated
 }: BeerCardProps) {
   const [rating, setRating] = useState<number | null>(initialRating ?? null);
   const [user, setUser] = useState<User | null>(null);
@@ -172,6 +180,9 @@ export function BeerCard({
       if (onRatingChange) {
         onRatingChange(parseInt(beerId), newRating);
       }
+      if (onRated) {
+        onRated(parseInt(beerId), newRating);
+      }
     } catch (error) {
       console.error('Failed to submit rating:', error);
     }
@@ -180,21 +191,28 @@ export function BeerCard({
   const handleRemoveRating = async () => {
     if (!user) return;
 
+    // Optimistic update - update UI immediately
+    const previousRating = rating;
+    setRating(null);
+
+    // Notify parent component of rating removal immediately
+    if (onRatingChange) {
+      onRatingChange(parseInt(beerId), null);
+    }
+    if (onUnrated) {
+      onUnrated(parseInt(beerId));
+    }
+
     try {
       await removeRating({
         beerId: parseInt(beerId),
         breweryId,
         userId: user.id
       });
-
-      setRating(null);
-
-      // Notify parent component of rating removal
-      if (onRatingChange) {
-        onRatingChange(parseInt(beerId), null);
-      }
     } catch (error) {
       console.error('Failed to remove rating:', error);
+      // Rollback on error
+      setRating(previousRating);
     }
   };
 
@@ -212,7 +230,13 @@ export function BeerCard({
               </Link>
             </CardTitle>
             <div className="flex items-center gap-2 shrink-0">
-              <SaveBeerButton beerId={parseInt(beerId)} breweryId={breweryId} initialIsSaved={isSaved} />
+              <SaveBeerButton
+                beerId={parseInt(beerId)}
+                breweryId={breweryId}
+                initialIsSaved={isSaved}
+                onSaved={onSaved}
+                onUnsaved={onUnsaved}
+              />
               <Badge variant="secondary">
                 {abv}%
               </Badge>

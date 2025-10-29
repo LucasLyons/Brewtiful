@@ -29,8 +29,8 @@ export function BreweryInfoCard({ brewery, isSaved }: BreweryInfoCardProps) {
           <CardTitle className="flex items-center gap-2 text-3xl">
             <Building2 className="h-8 w-8" />
             {brewery.name}
+            <SaveBreweryButton breweryId={parseInt(brewery.brewery_id)} initialIsSaved={isSaved} />
           </CardTitle>
-          <SaveBreweryButton breweryId={parseInt(brewery.brewery_id)} initialIsSaved={isSaved} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

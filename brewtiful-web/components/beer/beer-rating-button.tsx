@@ -16,6 +16,8 @@ interface BeerRatingButtonProps {
   breweryId: number
   className?: string
   initialRating?: number | null
+  onUnrated?: (beerId: number) => void
+  onRated?: (beerId: number, rating: number) => void
 }
 
 /**
@@ -40,7 +42,9 @@ export function BeerRatingButton({
   beerId,
   breweryId,
   className,
-  initialRating
+  initialRating,
+  onUnrated,
+  onRated
 }: BeerRatingButtonProps) {
   const [rating, setRating] = useState<number | null>(initialRating ?? null)
   const [user, setUser] = useState<User | null>(null)
@@ -101,6 +105,10 @@ export function BeerRatingButton({
 
       setRating(newRating)
       setIsOpen(false) // Close popover after rating
+
+      if (onRated) {
+        onRated(beerId, newRating)
+      }
     } catch (error) {
       console.error('Failed to submit rating:', error)
     }
@@ -109,16 +117,24 @@ export function BeerRatingButton({
   const handleRemoveRating = async () => {
     if (!user) return
 
+    // Optimistic update - update UI immediately
+    const previousRating = rating
+    setRating(null)
+
+    if (onUnrated) {
+      onUnrated(beerId)
+    }
+
     try {
       await removeRating({
         beerId,
         breweryId,
         userId: user.id
       })
-
-      setRating(null)
     } catch (error) {
       console.error('Failed to remove rating:', error)
+      // Rollback on error
+      setRating(previousRating)
     }
   }
 

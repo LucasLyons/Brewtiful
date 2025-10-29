@@ -22,6 +22,10 @@ interface BeerListItemProps {
   active?: 'Active' | 'Inactive' | 'Unknown';
   isSaved?: boolean;
   initialRating?: number | null;
+  onUnrated?: (beerId: number) => void;
+  onSaved?: (beerId: number) => void;
+  onUnsaved?: (beerId: number) => void;
+  onRated?: (beerId: number, rating: number) => void;
 }
 
 function TruncatedText({
@@ -122,7 +126,11 @@ export function BeerListItem({
   description,
   active = 'Active',
   isSaved,
-  initialRating
+  initialRating,
+  onUnrated,
+  onSaved,
+  onUnsaved,
+  onRated
 }: BeerListItemProps) {
   return (
     <TooltipProvider delayDuration={1000}>
@@ -230,12 +238,24 @@ export function BeerListItem({
 
         {/* Rating */}
         <div className="col-span-1 flex items-center justify-center">
-          <BeerRatingButton beerId={parseInt(beerId)} breweryId={breweryId} initialRating={initialRating} />
+          <BeerRatingButton
+            beerId={parseInt(beerId)}
+            breweryId={breweryId}
+            initialRating={initialRating}
+            onUnrated={onUnrated}
+            onRated={onRated}
+          />
         </div>
 
         {/* Save */}
         <div className="col-span-1 flex items-center justify-center">
-          <SaveBeerButton beerId={parseInt(beerId)} breweryId={breweryId} initialIsSaved={isSaved} />
+          <SaveBeerButton
+            beerId={parseInt(beerId)}
+            breweryId={breweryId}
+            initialIsSaved={isSaved}
+            onSaved={onSaved}
+            onUnsaved={onUnsaved}
+          />
         </div>
       </div>
     </TooltipProvider>
