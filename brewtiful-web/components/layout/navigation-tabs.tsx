@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Building2, User } from "lucide-react";
+import { Home, BookOpen, Building2, User, Sparkles } from "lucide-react";
 
 export function NavigationTabs() {
   const pathname = usePathname();
@@ -22,6 +22,11 @@ export function NavigationTabs() {
       name: "Breweries",
       href: "/breweries",
       icon: Building2,
+    },
+    {
+      name: "Recommendations",
+      href: "/recommendations",
+      icon: Sparkles,
     },
     {
       name: "Profile",
