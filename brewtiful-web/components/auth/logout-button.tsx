@@ -14,7 +14,7 @@ export function LogoutButton() {
   };
 
   return (
-    <Button onClick={handleLogout} disabled={isPending}>
+    <Button onClick={handleLogout} disabled={isPending} variant="ghost" size="sm">
       {isPending ? "Logging out..." : "Logout"}
     </Button>
   );

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Beer, Compass, Sparkles, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export function SplashPage() {
+export function SplashPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
       {/* Animated background elements */}
@@ -72,8 +72,8 @@ export function SplashPage() {
             size="lg"
             className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold px-8 py-6 text-lg group"
           >
-            <Link href="/login">
-              Sign In for Recommendations
+            <Link href={isLoggedIn ? '/recommendations' : '/login'}>
+              {isLoggedIn ? 'See Recommendations' : 'Sign In for Recommendations'}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </Button>

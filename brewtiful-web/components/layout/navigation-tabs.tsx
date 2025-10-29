@@ -28,11 +28,6 @@ export function NavigationTabs() {
       href: "/recommendations",
       icon: Sparkles,
     },
-    {
-      name: "Profile",
-      href: "/profile",
-      icon: User,
-    },
   ];
 
   return (
