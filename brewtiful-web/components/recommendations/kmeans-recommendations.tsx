@@ -65,7 +65,7 @@ export function KMeansRecommendations({
         console.log('Computing clusters for', ratedEmbeddings.length, 'rated beers');
 
         // Phase 1: Fetch initial candidates for cluster quality evaluation
-        const initialK = Math.min(5, ratedBeers.length);
+        const initialK = 5;
         const initialCentroids = Array(initialK).fill(null).map((_, i) =>
           ratedEmbeddings[Math.floor(i * ratedEmbeddings.length / initialK)].embedding
         );

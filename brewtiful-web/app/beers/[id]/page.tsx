@@ -28,7 +28,15 @@ export default async function BeerDetailPage({ params, searchParams }: BeerDetai
   const { data: beer, error: beerError } = await supabase
     .from('beers')
     .select(`
-      *,
+      beer_id,
+      name,
+      style,
+      super_style,
+      abv,
+      description,
+      active,
+      user_review_count,
+      scraped_review_count,
       brewery:breweries!beers_brewery_id_fkey (
         brewery_id,
         name,
@@ -44,13 +52,47 @@ export default async function BeerDetailPage({ params, searchParams }: BeerDetai
     notFound();
   }
 
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Fetch all flags for this beer
+  const { data: allFlags } = await supabase
+    .from('active_inactive_flags')
+    .select('user_id, flag')
+    .eq('beer_id', beerIdNum);
+
+  // Calculate flag counts
+  const activeCount = allFlags?.filter(f => f.flag === true).length || 0;
+  const inactiveCount = allFlags?.filter(f => f.flag === false).length || 0;
+
+  // Check if current user has flagged this beer
+  const userFlag = user
+    ? allFlags?.find(f => f.user_id === user.id)?.flag ?? null
+    : null;
+
+  // Get actual review count from user_ratings table
+  const { count: actualReviewCount } = await supabase
+    .from('user_ratings')
+    .select('*', { count: 'exact', head: true })
+    .eq('beer_id', beerIdNum);
+
   // Fetch similar beers based on embeddings
   const similarBeers = await getSimilarBeers(beerIdNum, 10, shouldShowInactive);
+
+  // Combine beer data with flag info and actual review count
+  const beerWithFlags = {
+    ...beer,
+    user_review_count: actualReviewCount || 0,
+    flag_active: activeCount,
+    flag_inactive: inactiveCount,
+    user_flagged_active: userFlag,
+    is_authenticated: !!user
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Beer Info Card */}
-      <BeerInfoCard beer={beer} />
+      <BeerInfoCard beer={beerWithFlags} />
 
       {/* Similar Beers Carousel */}
       {similarBeers.length > 0 && (

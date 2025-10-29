@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Beer, MapPin, Building2, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { ClickableFilter } from "@/components/shared/clickable-filter";
 import { StarRating } from "@/components/shared/star-rating";
+import { FlagButtons } from "@/components/beer/flag-buttons";
 import { getUserRating } from '@/lib/ratings/get-user-ratings';
 import { submitRating, removeRating } from '@/lib/ratings/submit-rating';
 import { createClient } from '@/lib/supabase/client';
@@ -28,6 +29,10 @@ interface BeerData {
   abv?: number;
   description?: string;
   active: 'Active' | 'Inactive' | 'Unknown';
+  flag_active?: number;
+  flag_inactive?: number;
+  user_flagged_active?: boolean | null;
+  is_authenticated?: boolean;
   brewery: Brewery | Brewery[];
 }
 
@@ -42,6 +47,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
   const [rating, setRating] = useState<number | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [showError, setShowError] = useState(false);
+  const [reviewCount, setReviewCount] = useState<number>(beer.user_review_count);
   const supabase = createClient();
 
   // Fetch user and rating on mount
@@ -78,33 +84,51 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
       return;
     }
 
+    const wasFirstRating = rating === null;
+
     try {
+      // Optimistic update
+      if (wasFirstRating) {
+        setReviewCount(prev => prev + 1);
+      }
+      setRating(newRating);
+
       await submitRating({
         beerId: beer.beer_id,
         breweryId: brewery.brewery_id,
         rating: newRating,
         userId: user.id
       });
-
-      setRating(newRating);
     } catch (error) {
       console.error('Failed to submit rating:', error);
+      // Revert on error
+      if (wasFirstRating) {
+        setReviewCount(prev => Math.max(0, prev - 1));
+      }
+      setRating(rating);
     }
   };
 
   const handleRemoveRating = async () => {
     if (!user || !brewery) return;
 
+    const previousRating = rating;
+
     try {
+      // Optimistic update
+      setReviewCount(prev => Math.max(0, prev - 1));
+      setRating(null);
+
       await removeRating({
         beerId: beer.beer_id,
         breweryId: brewery.brewery_id,
         userId: user.id
       });
-
-      setRating(null);
     } catch (error) {
       console.error('Failed to remove rating:', error);
+      // Revert on error
+      setReviewCount(prev => prev + 1);
+      setRating(previousRating);
     }
   };
 
@@ -138,6 +162,16 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
               Remove rating
             </button>
           )}
+        </div>
+        {/* Flag Buttons */}
+        <div className="pt-4">
+          <FlagButtons
+            beerId={beer.beer_id}
+            initialFlagActive={beer.flag_active || 0}
+            initialFlagInactive={beer.flag_inactive || 0}
+            userFlaggedActive={beer.user_flagged_active ?? null}
+            isAuthenticated={beer.is_authenticated || false}
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -235,13 +269,13 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
           </div>
 
           {/* Review Count */}
-          {beer.user_review_count !== null && beer.user_review_count !== undefined && (
+          {reviewCount !== null && reviewCount !== undefined && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
               <Beer className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div className="space-y-1">
                 <div className="text-sm font-medium">Reviews</div>
                 <div className="text-sm text-muted-foreground">
-                  {beer.user_review_count.toLocaleString()}
+                  {reviewCount.toLocaleString()}
                 </div>
               </div>
             </div>
