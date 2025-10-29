@@ -1,10 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { AuthLandingPage } from '@/components/layout/auth-landing-page'
 import Link from 'next/link';
-import {
-  getUserRatedBeersWithEmbeddings,
-  getCandidateBeers,
-} from '@/lib/recommendations/user-kmeans';
+import { getUserRatedBeersWithEmbeddings } from '@/lib/recommendations/user-kmeans';
 import { KMeansRecommendations } from '@/components/recommendations/kmeans-recommendations';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 
@@ -94,16 +91,12 @@ export default async function RecommendationsPage() {
   // Fetch user's rated beers with embeddings
   const ratedBeers = await getUserRatedBeersWithEmbeddings(userId);
 
-  // Fetch candidate beers (unrated beers that could be recommended)
-  const candidateBeers = await getCandidateBeers(userId, 1000);
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Your Recommendations</h1>
         <p className="text-muted-foreground">
-          Personalized beer recommendations based on your ratings using k-means
-          clustering
+          Personalized beer recommendations based on your tastes!
         </p>
       </div>
 
@@ -123,7 +116,6 @@ export default async function RecommendationsPage() {
       ) : (
         <KMeansRecommendations
           ratedBeers={ratedBeers}
-          candidateBeers={candidateBeers}
           userId={userId}
         />
       )}

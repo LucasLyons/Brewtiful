@@ -221,28 +221,222 @@ export function findMostSimilar(
 }
 
 /**
- * Find beers most similar to cluster centroids
+ * Find beers most similar to cluster centroids using round-robin selection
+ * Recommends 1 beer per cluster per round until targetCount is reached
  * @param centroids - Cluster centroids from k-means
  * @param candidates - Candidate beers to recommend
- * @param beersPerCentroid - Number of beers to recommend per centroid
+ * @param targetCount - Target number of recommendations per page (default 12)
+ * @param offset - Number of recommendations to skip (for pagination, default 0)
+ * @returns Object with recommendations array and metadata
  */
 export function recommendFromCentroids(
   centroids: number[][],
   candidates: BeerEmbedding[],
-  beersPerCentroid: number = 4
-): BeerEmbedding[] {
-  const recommendations = new Map<number, BeerEmbedding>();
+  targetCount: number = 12,
+  offset: number = 0
+): { recommendations: BeerEmbedding[]; hasMore: boolean; totalAvailable: number } {
+  const allRecommendations: BeerEmbedding[] = [];
+  const usedBeerIds = new Set<number>();
 
-  for (const centroid of centroids) {
-    const similar = findMostSimilar(centroid, candidates, beersPerCentroid);
+  // Pre-compute all similarities for each centroid
+  const centroidCandidates: BeerEmbedding[][] = centroids.map((centroid) => {
+    const similarities = candidates.map((beer) => ({
+      beer,
+      similarity: cosineSimilarity(centroid, beer.embedding),
+    }));
 
-    for (const beer of similar) {
-      // Only add if not already in recommendations (avoid duplicates)
-      if (!recommendations.has(beer.beer_id)) {
-        recommendations.set(beer.beer_id, beer);
+    // Sort by similarity descending
+    similarities.sort((a, b) => b.similarity - a.similarity);
+
+    return similarities.map((s) => s.beer);
+  });
+
+  // Calculate maximum possible recommendations
+  const maxPossible = centroidCandidates.reduce((sum, cluster) => sum + cluster.length, 0);
+
+  // Round-robin selection: take 1 beer from each cluster per round
+  // Generate ALL possible recommendations (not just enough for current page)
+  let round = 0;
+
+  while (allRecommendations.length < maxPossible) {
+    let addedThisRound = false;
+
+    for (let clusterIdx = 0; clusterIdx < centroids.length; clusterIdx++) {
+      const clusterCandidates = centroidCandidates[clusterIdx];
+
+      // Find next unused beer for this cluster
+      let beer: BeerEmbedding | undefined;
+      for (let i = round; i < clusterCandidates.length; i++) {
+        if (!usedBeerIds.has(clusterCandidates[i].beer_id)) {
+          beer = clusterCandidates[i];
+          break;
+        }
       }
+
+      if (beer) {
+        allRecommendations.push(beer);
+        usedBeerIds.add(beer.beer_id);
+        addedThisRound = true;
+      }
+    }
+
+    // If we couldn't add any beers this round, we've exhausted candidates
+    if (!addedThisRound) {
+      break;
+    }
+
+    round++;
+  }
+
+  // Apply pagination: skip offset items and take targetCount
+  const paginatedRecommendations = allRecommendations.slice(offset, offset + targetCount);
+  const hasMore = allRecommendations.length > offset + targetCount;
+
+  return {
+    recommendations: paginatedRecommendations,
+    hasMore,
+    totalAvailable: allRecommendations.length,
+  };
+}
+
+/**
+ * Evaluate cluster quality by checking if each cluster has enough items
+ * within a similarity threshold
+ * @param centroids - Cluster centroids
+ * @param candidates - Candidate beers
+ * @param minItemsPerCluster - Minimum items each cluster should have
+ * @param similarityThreshold - Minimum cosine similarity (0-1, default 0.7)
+ * @returns Object with isValid flag and cluster sizes
+ */
+export function evaluateClusterQuality(
+  centroids: number[][],
+  candidates: BeerEmbedding[],
+  minItemsPerCluster: number = 5,
+  similarityThreshold: number = 0.7
+): { isValid: boolean; clusterSizes: number[] } {
+  const clusterSizes = new Array(centroids.length).fill(0);
+
+  // For each beer, assign it to its nearest centroid IF similarity meets threshold
+  for (const beer of candidates) {
+    let maxSimilarity = -Infinity;
+    let nearestCluster = -1;
+
+    // Find nearest centroid
+    for (let i = 0; i < centroids.length; i++) {
+      const similarity = cosineSimilarity(beer.embedding, centroids[i]);
+      if (similarity > maxSimilarity) {
+        maxSimilarity = similarity;
+        nearestCluster = i;
+      }
+    }
+
+    // Only count if similarity meets threshold
+    if (maxSimilarity >= similarityThreshold && nearestCluster >= 0) {
+      clusterSizes[nearestCluster]++;
     }
   }
 
-  return Array.from(recommendations.values());
+  // Check if all clusters have enough items
+  const isValid = clusterSizes.every((size) => size >= minItemsPerCluster);
+
+  return { isValid, clusterSizes };
+}
+
+/**
+ * Adaptively select the best k value by trying different values
+ * and checking cluster quality. Finds the MAXIMUM k where all clusters
+ * still have enough items (stops at the last valid k before failure).
+ * @param beers - Rated beers with embeddings
+ * @param candidates - Candidate beers for quality evaluation
+ * @param kRange - Array of k values to try (default [1,2,3,4,5])
+ * @param minItemsPerCluster - Minimum items per cluster (default 5)
+ * @param similarityThreshold - Similarity threshold for cluster membership (default 0.7)
+ * @param minTotalRecommendations - Minimum total recommendations to return (default 12)
+ * @returns ClusterResult with the best k value
+ */
+export function adaptiveKMeans(
+  beers: BeerEmbedding[],
+  candidates: BeerEmbedding[],
+  kRange: number[] = [1, 2, 3, 4, 5],
+  minItemsPerCluster: number = 5,
+  similarityThreshold: number = 0.7,
+  minTotalRecommendations: number = 12
+): ClusterResult & { k: number; clusterSizes: number[] } {
+  console.log('Starting adaptive k-means selection...');
+
+  let bestResult: (ClusterResult & { k: number; clusterSizes: number[] }) | null = null;
+
+  for (const k of kRange) {
+    // Can't have more clusters than beers
+    if (k > beers.length) {
+      console.log(`Skipping k=${k} (more than ${beers.length} rated beers)`);
+      continue;
+    }
+
+    console.log(`Trying k=${k}...`);
+
+    // Run k-means clustering
+    const result = weightedKMeans(beers, k);
+
+    // Evaluate cluster quality
+    const { isValid, clusterSizes } = evaluateClusterQuality(
+      result.centroids,
+      candidates,
+      minItemsPerCluster,
+      similarityThreshold
+    );
+
+    console.log(
+      `k=${k}: cluster sizes = [${clusterSizes.join(', ')}], valid = ${isValid}`
+    );
+
+    // Check if this k is valid
+    if (isValid) {
+      // Also check if we can get enough total recommendations
+      const totalPotentialRecs = clusterSizes.reduce((sum, size) => sum + size, 0);
+
+      if (totalPotentialRecs >= minTotalRecommendations) {
+        console.log(`k=${k} is valid with ${totalPotentialRecs} potential recommendations`);
+        // Store this as the best result so far
+        bestResult = {
+          ...result,
+          k,
+          clusterSizes,
+        };
+        // Continue to try higher k values
+      } else {
+        console.log(
+          `k=${k} is valid but only has ${totalPotentialRecs} potential recs (need ${minTotalRecommendations})`
+        );
+        // This k doesn't meet minimum recommendations, stop here
+        break;
+      }
+    } else {
+      // Found a k that doesn't work, stop and return the last valid k
+      console.log(`k=${k} is invalid, stopping search`);
+      break;
+    }
+  }
+
+  // If we found a valid k, return it
+  if (bestResult) {
+    console.log(`Selected k=${bestResult.k} as the maximum valid k`);
+    return bestResult;
+  }
+
+  // Fallback to k=1 if nothing works
+  console.log('No valid k found, falling back to k=1');
+  const fallbackResult = weightedKMeans(beers, 1);
+  const { clusterSizes } = evaluateClusterQuality(
+    fallbackResult.centroids,
+    candidates,
+    0, // No minimum for fallback
+    0 // No threshold for fallback
+  );
+
+  return {
+    ...fallbackResult,
+    k: 1,
+    clusterSizes,
+  };
 }
