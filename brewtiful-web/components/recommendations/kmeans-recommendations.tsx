@@ -81,7 +81,7 @@ export function KMeansRecommendations({
           body: JSON.stringify({
             centroids: seedEmbeddings,
             userId,
-            beersPerCentroid: 100,
+            beersPerCentroid: 2500,
             showInactive: false,
           }),
         });
@@ -103,9 +103,9 @@ export function KMeansRecommendations({
         const result = adaptiveKMeans(
           ratedEmbeddings,
           initialCandidateEmbeddings,
-          [1, 2, 3, 4, 5],
+          [1, 2, 5, 7, 10, 15],
           5,
-          0.55,
+          0.6,
           12
         );
 
