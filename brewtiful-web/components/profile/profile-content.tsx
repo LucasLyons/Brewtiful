@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BeersView } from '@/components/beer/beers-view'
 import { BreweriesView } from '@/components/brewery/breweries-view'
+import { ProfileBeerSearch } from '@/components/profile/profile-beer-search'
+import { ProfileBrewerySearch } from '@/components/profile/profile-brewery-search'
 
 interface Beer {
   beer_id: string
@@ -54,6 +56,11 @@ export function ProfileContent({
   const [savedBeerIds, setSavedBeerIds] = useState(initialSavedBeerIds)
   const [savedBreweryIds, setSavedBreweryIds] = useState(initialSavedBreweryIds)
   const [userRatings, setUserRatings] = useState(initialUserRatings)
+
+  // Search query states
+  const [ratedBeersSearchQuery, setRatedBeersSearchQuery] = useState("")
+  const [savedBeersSearchQuery, setSavedBeersSearchQuery] = useState("")
+  const [savedBreweriesSearchQuery, setSavedBreweriesSearchQuery] = useState("")
 
   // Handler for when a beer is unrated
   const handleBeerUnrated = useCallback((beerId: number) => {
@@ -138,15 +145,47 @@ export function ProfileContent({
     })
   }, [])
 
+  // Filter beers based on search query
+  const filteredRatedBeers = useMemo(() => {
+    if (!ratedBeersSearchQuery) return ratedBeers
+
+    return ratedBeers.filter(beer =>
+      beer.name.toLowerCase().includes(ratedBeersSearchQuery) ||
+      beer.brewery.name.toLowerCase().includes(ratedBeersSearchQuery)
+    )
+  }, [ratedBeers, ratedBeersSearchQuery])
+
+  const filteredSavedBeers = useMemo(() => {
+    if (!savedBeersSearchQuery) return savedBeers
+
+    return savedBeers.filter(beer =>
+      beer.name.toLowerCase().includes(savedBeersSearchQuery) ||
+      beer.brewery.name.toLowerCase().includes(savedBeersSearchQuery)
+    )
+  }, [savedBeers, savedBeersSearchQuery])
+
+  // Filter breweries based on search query
+  const filteredSavedBreweries = useMemo(() => {
+    if (!savedBreweriesSearchQuery) return savedBreweries
+
+    return savedBreweries.filter(brewery =>
+      brewery.name.toLowerCase().includes(savedBreweriesSearchQuery)
+    )
+  }, [savedBreweries, savedBreweriesSearchQuery])
+
   return (
     <div className="min-h-screen">
       {/* Header */}
       <div className="border-b">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">{displayName}&apos;s Profile</h1>
-          <p className="text-muted-foreground mt-1">
-            Your rated and saved beers and breweries
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">{displayName}&apos;s Profile</h1>
+              <p className="text-muted-foreground mt-1">
+                Your rated and saved beers and breweries
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -161,78 +200,102 @@ export function ProfileContent({
 
           {/* Rated Beers Tab */}
           <TabsContent value="rated" className="mt-6">
-            {ratedBeers.length === 0 ? (
-              <div className="text-center py-12">
+            <div className="mb-6 max-w-2xl">
+              <ProfileBeerSearch onSearch={setRatedBeersSearchQuery} />
+            </div>
+            {filteredRatedBeers.length === 0 ? (
+              <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
-                  You haven&apos;t rated any beers yet.
+                  {ratedBeers.length === 0
+                    ? "You haven't rated any beers yet."
+                    : "No beers found matching your search."}
                 </p>
-                <Link
-                  href="/beers"
-                  className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                >
-                  Browse Beers
-                </Link>
+                {ratedBeers.length === 0 && (
+                  <Link
+                    href="/beers"
+                    className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                  >
+                    Browse Beers
+                  </Link>
+                )}
               </div>
             ) : (
               <BeersView
-                beers={ratedBeers}
+                beers={filteredRatedBeers}
                 savedBeerIds={savedBeerIds}
                 userRatings={userRatings}
                 onBeerUnrated={handleBeerUnrated}
                 onBeerSaved={handleBeerSaved}
                 onBeerUnsaved={handleBeerUnsaved}
                 onBeerRated={handleBeerRated}
+                hideSearch={true}
               />
             )}
           </TabsContent>
 
           {/* Saved Beers Tab */}
           <TabsContent value="saved-beers" className="mt-6">
-            {savedBeers.length === 0 ? (
-              <div className="text-center py-12">
+            <div className="mb-6 max-w-2xl">
+              <ProfileBeerSearch onSearch={setSavedBeersSearchQuery} />
+            </div>
+            {filteredSavedBeers.length === 0 ? (
+              <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
-                  You haven&apos;t saved any beers yet.
+                  {savedBeers.length === 0
+                    ? "You haven't saved any beers yet."
+                    : "No beers found matching your search."}
                 </p>
-                <Link
-                  href="/beers"
-                  className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                >
-                  Browse Beers
-                </Link>
+                {savedBeers.length === 0 && (
+                  <Link
+                    href="/beers"
+                    className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                  >
+                    Browse Beers
+                  </Link>
+                )}
               </div>
             ) : (
               <BeersView
-                beers={savedBeers}
+                beers={filteredSavedBeers}
                 savedBeerIds={savedBeerIds}
                 userRatings={userRatings}
                 onBeerUnrated={handleBeerUnrated}
                 onBeerSaved={handleBeerSaved}
                 onBeerUnsaved={handleBeerUnsaved}
                 onBeerRated={handleBeerRated}
+                hideSearch={true}
               />
             )}
           </TabsContent>
 
           {/* Saved Breweries Tab */}
           <TabsContent value="saved-breweries" className="mt-6">
-            {savedBreweries.length === 0 ? (
-              <div className="text-center py-12">
+            <div className="mb-6 max-w-2xl">
+              <ProfileBrewerySearch onSearch={setSavedBreweriesSearchQuery} />
+            </div>
+            {filteredSavedBreweries.length === 0 ? (
+              <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
-                  You haven&apos;t saved any breweries yet.
+                  {savedBreweries.length === 0
+                    ? "You haven't saved any breweries yet."
+                    : "No breweries found matching your search."}
                 </p>
-                <Link
-                  href="/breweries"
-                  className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                >
-                  Browse Breweries
-                </Link>
+                {savedBreweries.length === 0 && (
+                  <Link
+                    href="/breweries"
+                    className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                  >
+                    Browse Breweries
+                  </Link>
+                )}
               </div>
             ) : (
               <BreweriesView
-                breweries={savedBreweries}
+                breweries={filteredSavedBreweries}
                 savedBreweryIds={savedBreweryIds}
                 onBrewerySaved={handleBrewerySaved}
                 onBreweryUnsaved={handleBreweryUnsaved}
+                hideSearch={true}
               />
             )}
           </TabsContent>

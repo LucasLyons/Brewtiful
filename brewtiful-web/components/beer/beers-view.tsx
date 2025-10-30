@@ -30,9 +30,10 @@ interface BeersViewProps {
   onBeerSaved?: (beerId: number) => void;
   onBeerUnsaved?: (beerId: number) => void;
   onBeerRated?: (beerId: number, rating: number) => void;
+  hideSearch?: boolean; // Add option to hide search for profile page
 }
 
-export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onBeerUnrated, onBeerSaved, onBeerUnsaved, onBeerRated }: BeersViewProps) {
+export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onBeerUnrated, onBeerSaved, onBeerUnsaved, onBeerRated, hideSearch = false }: BeersViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -74,9 +75,11 @@ export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onB
     <>
       {/* Header Section with Search and View Toggle */}
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex-1">
-          <BeerSearch />
-        </div>
+        {!hideSearch && (
+          <div className="flex-1">
+            <BeerSearch />
+          </div>
+        )}
         <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
       </div>
 

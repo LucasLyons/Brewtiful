@@ -17,15 +17,18 @@ interface BreweriesViewProps {
   savedBreweryIds?: Set<number>;
   onBrewerySaved?: (breweryId: number) => void;
   onBreweryUnsaved?: (breweryId: number) => void;
+  hideSearch?: boolean; // Add option to hide search for profile page
 }
 
-export function BreweriesView({ breweries, paginationTop, savedBreweryIds, onBrewerySaved, onBreweryUnsaved }: BreweriesViewProps) {
+export function BreweriesView({ breweries, paginationTop, savedBreweryIds, onBrewerySaved, onBreweryUnsaved, hideSearch = false }: BreweriesViewProps) {
   return (
     <>
       {/* Header Section with Search */}
-      <div className="mb-8">
-        <BrewerySearch />
-      </div>
+      {!hideSearch && (
+        <div className="mb-8">
+          <BrewerySearch />
+        </div>
+      )}
 
       {/* Pagination (Top) */}
       {paginationTop && (
