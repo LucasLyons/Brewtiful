@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   adaptiveKMeans,
   recommendFromCentroids,
-  selectDiverseSeeds,
   type BeerEmbedding,
 } from '@/lib/recommendations/kmeans';
 import type {
@@ -65,52 +64,17 @@ export function KMeansRecommendations({
 
         console.log('Computing clusters for', ratedEmbeddings.length, 'rated beers');
 
-        // Phase 1: Fetch initial candidates for cluster quality evaluation
-        // Use k-means++ style selection to pick 5 diverse seed beers
-        const numSeeds = 5;
-        const seedBeers = selectDiverseSeeds(ratedEmbeddings, numSeeds);
-        const seedEmbeddings = seedBeers.map(beer => beer.embedding);
-
-        console.log('Selected', seedBeers.length, 'diverse seed beers for initial candidate fetching');
-
-        const initialResponse = await fetch('/api/recommendations/candidates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            centroids: seedEmbeddings,
-            userId,
-            beersPerCentroid: 2500,
-            showInactive: false,
-          }),
-        });
-
-        if (!initialResponse.ok) {
-          throw new Error('Failed to fetch initial candidates');
-        }
-
-        const initialCandidates: CandidateBeer[] = await initialResponse.json();
-
-        const initialCandidateEmbeddings: BeerEmbedding[] = initialCandidates.map(
-          (beer) => ({
-            beer_id: beer.beer_id,
-            embedding: beer.embedding,
-          })
-        );
-
-        // Phase 2: Use adaptive k-means to find best k value
-        const result = adaptiveKMeans(
+        // Phase 1: Use adaptive k-means to find best k value
+        const result = await adaptiveKMeans(
           ratedEmbeddings,
-          initialCandidateEmbeddings,
+          userId,
           [1, 2, 5, 7, 10, 15],
           5,
-          0.6,
+          0.65,
           12
         );
 
         console.log(`Adaptive k-means selected k=${result.k}`);
-        console.log('Cluster sizes:', result.clusterSizes);
 
         setCachedCentroids(result.centroids);
 

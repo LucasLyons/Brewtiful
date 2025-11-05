@@ -1,3 +1,7 @@
+import type {
+  CandidateBeer,
+} from '@/lib/recommendations/user-kmeans';
+
 /**
  * K-means clustering utilities for beer recommendations
  * Uses weighted k-means with rating weights to find beer taste clusters
@@ -419,21 +423,57 @@ export function recommendFromCentroids(
  * Evaluate cluster quality by checking if each cluster has enough items
  * within a similarity threshold
  * @param centroids - Cluster centroids
- * @param candidates - Candidate beers
+ * @param candidates - Candidate beers (optional - will be fetched if not provided)
  * @param minItemsPerCluster - Minimum items each cluster should have
  * @param similarityThreshold - Minimum cosine similarity (0-1, default 0.7)
+ * @param userId - User ID for fetching candidates (required if candidates not provided)
+ * @param beersPerCentroid - Number of beers per centroid to fetch (default 200)
  * @returns Object with isValid flag and cluster sizes
  */
-export function evaluateClusterQuality(
+export async function evaluateClusterQuality(
   centroids: number[][],
-  candidates: BeerEmbedding[],
+  candidates?: BeerEmbedding[],
   minItemsPerCluster: number = 5,
-  similarityThreshold: number = 0.7
-): { isValid: boolean; clusterSizes: number[] } {
+  similarityThreshold: number = 0.7,
+  userId?: string | null,
+  beersPerCentroid: number = 200
+): Promise<{ isValid: boolean; clusterSizes: number[] }> {
+  // Fetch candidates if not provided
+  let candidateBeers = candidates;
+
+  if (!candidateBeers) {
+    if (userId === undefined) {
+      throw new Error('userId must be provided when candidates are not provided');
+    }
+
+    const response = await fetch('/api/recommendations/candidates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        centroids,
+        userId,
+        beersPerCentroid,
+        showInactive: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch candidates');
+    }
+
+    const candidateResponse: CandidateBeer[] = await response.json();
+    candidateBeers = candidateResponse.map((beer) => ({
+      beer_id: beer.beer_id,
+      embedding: beer.embedding,
+    }));
+  }
+
   const clusterSizes = new Array(centroids.length).fill(0);
 
   // For each beer, assign it to its nearest centroid IF similarity meets threshold
-  for (const beer of candidates) {
+  for (const beer of candidateBeers) {
     let maxSimilarity = -Infinity;
     let nearestCluster = -1;
 
@@ -470,14 +510,14 @@ export function evaluateClusterQuality(
  * @param minTotalRecommendations - Minimum total recommendations to return (default 12)
  * @returns ClusterResult with the best k value
  */
-export function adaptiveKMeans(
+export async function adaptiveKMeans(
   beers: BeerEmbedding[],
-  candidates: BeerEmbedding[],
+  userId: string | null,
   kRange: number[] = [1, 2, 3, 4, 5],
   minItemsPerCluster: number = 5,
   similarityThreshold: number = 0.7,
   minTotalRecommendations: number = 12
-): ClusterResult & { k: number; clusterSizes: number[] } {
+): Promise<ClusterResult & { k: number; clusterSizes: number[] }> {
   console.log('Starting adaptive k-means selection...');
 
   let bestResult: (ClusterResult & { k: number; clusterSizes: number[] }) | null = null;
@@ -494,10 +534,36 @@ export function adaptiveKMeans(
     // Run k-means clustering
     const result = weightedKMeans(beers, k);
 
+    const candidates = await fetch('/api/recommendations/candidates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          centroids: result.centroids,
+          userId,
+          beersPerCentroid: 200,
+          showInactive: false,
+        }),
+      });
+
+      if (!candidates) {
+        throw new Error('Failed to fetch candidates');
+      }
+
+      const candidateResponse: CandidateBeer[] = await candidates.json();
+
+      const candidateEmbeddings: BeerEmbedding[] = candidateResponse.map(
+        (beer) => ({
+          beer_id: beer.beer_id,
+          embedding: beer.embedding,
+        })
+      );
+
     // Evaluate cluster quality
-    const { isValid, clusterSizes } = evaluateClusterQuality(
+    const { isValid, clusterSizes } = await evaluateClusterQuality(
       result.centroids,
-      candidates,
+      candidateEmbeddings,
       minItemsPerCluster,
       similarityThreshold
     );
@@ -543,11 +609,13 @@ export function adaptiveKMeans(
   // Fallback to k=1 if nothing works
   console.log('No valid k found, falling back to k=1');
   const fallbackResult = weightedKMeans(beers, 1);
-  const { clusterSizes } = evaluateClusterQuality(
+  const { clusterSizes } = await evaluateClusterQuality(
     fallbackResult.centroids,
-    candidates,
+    undefined, // Let the function fetch candidates automatically
     0, // No minimum for fallback
-    0 // No threshold for fallback
+    0, // No threshold for fallback
+    userId, // Pass userId for candidate fetching
+    200 // beersPerCentroid
   );
 
   return {
