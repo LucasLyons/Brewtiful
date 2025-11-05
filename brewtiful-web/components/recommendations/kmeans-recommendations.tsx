@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  adaptiveKMeans,
+  adaptiveKMeansWithPrefetch,
   recommendFromCentroids,
   type BeerEmbedding,
 } from '@/lib/recommendations/kmeans';
@@ -11,6 +11,13 @@ import type {
   RatedBeer,
   CandidateBeer,
 } from '@/lib/recommendations/user-kmeans';
+import {
+  loadCandidatesFromCache,
+  saveCandidatesToCache,
+} from '@/lib/recommendations/cache';
+import { areBeersSaved } from '@/lib/saved/get-user-saved';
+import { getBatchUserRatings } from '@/lib/ratings/get-user-ratings';
+import { createClient } from '@/lib/supabase/client';
 import { BeerCard } from '@/components/beer/beer-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,9 +37,13 @@ export function KMeansRecommendations({
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Computing recommendations...');
   const [recommendations, setRecommendations] = useState<CandidateBeer[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [totalAvailable, setTotalAvailable] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [savedStates, setSavedStates] = useState<Map<number, boolean>>(new Map());
+  const [ratings, setRatings] = useState<Map<number, number>>(new Map());
 
   // Cache candidates and cluster results to avoid re-computation
   const [cachedCandidates, setCachedCandidates] = useState<CandidateBeer[]>([]);
@@ -41,11 +52,14 @@ export function KMeansRecommendations({
 
   const RECS_PER_PAGE = 12;
 
-  // Effect 1: Compute clusters and fetch candidates once
+  // Effect 1: Compute clusters and fetch candidates once with caching
   useEffect(() => {
+    const K_RANGE = [1, 2, 5, 7, 10, 15];
+    const BEERS_PER_CENTROID = 200; // For evaluation
     async function computeClusters() {
       setIsLoading(true);
       setIsClusteringDone(false);
+      setError(null);
 
       try {
         const ratedBeers = initialRatedBeers;
@@ -62,13 +76,87 @@ export function KMeansRecommendations({
           rating: beer.rating,
         }));
 
+        const ratedBeerIds = ratedBeers.map(beer => beer.beer_id);
+
         console.log('Computing clusters for', ratedEmbeddings.length, 'rated beers');
 
-        // Phase 1: Use adaptive k-means to find best k value
-        const result = await adaptiveKMeans(
-          ratedEmbeddings,
+        // Try to load from cache first
+        setLoadingMessage('Checking cache...');
+        const cachedCandidatesByK = loadCandidatesFromCache(
           userId,
-          [1, 2, 5, 7, 10, 15],
+          ratedBeerIds,
+          K_RANGE,
+          BEERS_PER_CENTROID
+        );
+
+        let candidatesByK: Record<string, CandidateBeer[]>;
+
+        if (cachedCandidatesByK) {
+          console.log('✅ Using cached candidates');
+          setLoadingMessage('Loading from cache...');
+          candidatesByK = cachedCandidatesByK;
+        } else {
+          console.log('📡 Fetching candidates from API...');
+          setLoadingMessage('Computing taste clusters...');
+
+          // Pre-compute centroids for all k values
+          const centroidsByK: Record<string, number[][]> = {};
+          for (const k of K_RANGE) {
+            if (k <= ratedEmbeddings.length) {
+              // Import weightedKMeans for centroid calculation
+              const { weightedKMeans } = await import('@/lib/recommendations/kmeans');
+              const result = weightedKMeans(ratedEmbeddings, k);
+              centroidsByK[`k${k}`] = result.centroids;
+            }
+          }
+
+          setLoadingMessage('Fetching candidate beers...');
+
+          // Batch fetch all candidates in parallel
+          const batchResponse = await fetch('/api/recommendations/candidates-batch', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              centroidsByK,
+              userId,
+              beersPerCentroid: BEERS_PER_CENTROID,
+              showInactive: false,
+            }),
+          });
+
+          if (!batchResponse.ok) {
+            const errorText = await batchResponse.text();
+            throw new Error(`Failed to fetch candidates: ${errorText}`);
+          }
+
+          const batchData = await batchResponse.json();
+
+          if (!batchData.success) {
+            throw new Error(batchData.error || 'Failed to fetch candidates');
+          }
+
+          candidatesByK = batchData.data;
+
+          console.log('✅ Fetched candidates for k values:', Object.keys(candidatesByK));
+
+          // Save to cache
+          saveCandidatesToCache(
+            userId,
+            ratedBeerIds,
+            candidatesByK,
+            K_RANGE,
+            BEERS_PER_CENTROID
+          );
+        }
+
+        // Phase 2: Use adaptive k-means with pre-fetched candidates
+        setLoadingMessage('Optimizing cluster quality...');
+        const result = await adaptiveKMeansWithPrefetch(
+          ratedEmbeddings,
+          candidatesByK,
+          K_RANGE,
           5,
           0.65,
           12
@@ -78,36 +166,22 @@ export function KMeansRecommendations({
 
         setCachedCentroids(result.centroids);
 
-        // Phase 3: Fetch enough candidates for ALL pages
-        // Fetch more candidates per centroid to support pagination
-        const beersPerCentroid = 100; // Fetch enough for many pages
+        // Phase 3: Get final candidates for selected k
+        setLoadingMessage('Preparing recommendations...');
+        const selectedK = `k${result.k}`;
+        const finalCandidates = candidatesByK[selectedK] || [];
 
-        const finalResponse = await fetch('/api/recommendations/candidates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            centroids: result.centroids,
-            userId,
-            beersPerCentroid,
-            showInactive: false,
-          }),
-        });
+        console.log('Using final candidates:', finalCandidates.length);
 
-        if (!finalResponse.ok) {
-          throw new Error('Failed to fetch final candidates');
-        }
-
-        const candidateBeers: CandidateBeer[] = await finalResponse.json();
-        console.log('Fetched final candidates:', candidateBeers.length);
-
-        setCachedCandidates(candidateBeers);
+        setCachedCandidates(finalCandidates);
         setIsClusteringDone(true);
       } catch (error) {
         console.error('Error computing clusters:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+        setError(`Failed to generate recommendations: ${errorMessage}`);
       } finally {
         setIsLoading(false);
+        setLoadingMessage('Computing recommendations...');
       }
     }
 
@@ -149,14 +223,71 @@ export function KMeansRecommendations({
 
   }, [currentPage, isClusteringDone, cachedCentroids, cachedCandidates, RECS_PER_PAGE]);
 
+  // Effect 3: Batch fetch saved states and ratings when recommendations change
+  useEffect(() => {
+    async function fetchUserData() {
+      if (recommendations.length === 0 || !userId) {
+        setSavedStates(new Map());
+        setRatings(new Map());
+        return;
+      }
+
+      const supabase = createClient();
+
+      // Get current user to ensure still authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSavedStates(new Map());
+        setRatings(new Map());
+        return;
+      }
+
+      const beerIds = recommendations.map(beer => beer.beer_id);
+
+      // Batch fetch both saved states and ratings in parallel
+      const [savedMap, ratingsMap] = await Promise.all([
+        areBeersSaved(beerIds, user.id),
+        getBatchUserRatings(beerIds, user.id)
+      ]);
+
+      setSavedStates(savedMap);
+      setRatings(ratingsMap);
+    }
+
+    fetchUserData();
+  }, [recommendations, userId]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2 text-muted-foreground">
-          Computing recommendations...
+          {loadingMessage}
         </span>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center space-y-4">
+            <p className="text-destructive font-medium">
+              {error}
+            </p>
+            <Button
+              onClick={() => {
+                setError(null);
+                window.location.reload();
+              }}
+              variant="outline"
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -187,6 +318,8 @@ export function KMeansRecommendations({
                   city={beer.brewery_city || undefined}
                   country={beer.brewery_country || undefined}
                   description={beer.description || undefined}
+                  isSaved={savedStates.get(beer.beer_id) ?? false}
+                  initialRating={ratings.get(beer.beer_id) ?? null}
                 />
               ))}
             </div>

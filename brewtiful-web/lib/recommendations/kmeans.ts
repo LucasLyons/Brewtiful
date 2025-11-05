@@ -499,6 +499,128 @@ export async function evaluateClusterQuality(
 }
 
 /**
+ * Adaptively select the best k value with PRE-FETCHED candidates
+ * Uses batch-fetched candidates to avoid sequential API calls
+ * @param beers - Rated beers with embeddings
+ * @param candidatesByK - Pre-fetched candidates for each k value (e.g. { k1: [...], k2: [...], k5: [...] })
+ * @param kRange - Array of k values to try (default [1,2,3,4,5])
+ * @param minItemsPerCluster - Minimum items per cluster (default 5)
+ * @param similarityThreshold - Similarity threshold for cluster membership (default 0.7)
+ * @param minTotalRecommendations - Minimum total recommendations to return (default 12)
+ * @returns ClusterResult with the best k value
+ */
+export async function adaptiveKMeansWithPrefetch(
+  beers: BeerEmbedding[],
+  candidatesByK: Record<string, CandidateBeer[]>,
+  kRange: number[] = [1, 2, 3, 4, 5],
+  minItemsPerCluster: number = 5,
+  similarityThreshold: number = 0.7,
+  minTotalRecommendations: number = 12
+): Promise<ClusterResult & { k: number; clusterSizes: number[] }> {
+  console.log('Starting adaptive k-means selection with pre-fetched candidates...');
+
+  let bestResult: (ClusterResult & { k: number; clusterSizes: number[] }) | null = null;
+
+  for (const k of kRange) {
+    // Can't have more clusters than beers
+    if (k > beers.length) {
+      console.log(`Skipping k=${k} (more than ${beers.length} rated beers)`);
+      continue;
+    }
+
+    console.log(`Trying k=${k}...`);
+
+    // Run k-means clustering
+    const result = weightedKMeans(beers, k);
+
+    // Get pre-fetched candidates for this k
+    const candidateKey = `k${k}`;
+    const candidateResponse = candidatesByK[candidateKey];
+
+    if (!candidateResponse || candidateResponse.length === 0) {
+      console.warn(`No candidates found for k=${k}, skipping`);
+      continue;
+    }
+
+    const candidateEmbeddings: BeerEmbedding[] = candidateResponse.map(
+      (beer) => ({
+        beer_id: beer.beer_id,
+        embedding: beer.embedding,
+      })
+    );
+
+    // Evaluate cluster quality
+    const { isValid, clusterSizes } = await evaluateClusterQuality(
+      result.centroids,
+      candidateEmbeddings,
+      minItemsPerCluster,
+      similarityThreshold
+    );
+
+    console.log(
+      `k=${k}: cluster sizes = [${clusterSizes.join(', ')}], valid = ${isValid}`
+    );
+
+    // Check if this k is valid
+    if (isValid) {
+      // Also check if we can get enough total recommendations
+      const totalPotentialRecs = clusterSizes.reduce((sum, size) => sum + size, 0);
+
+      if (totalPotentialRecs >= minTotalRecommendations) {
+        console.log(`k=${k} is valid with ${totalPotentialRecs} potential recommendations`);
+        // Store this as the best result so far
+        bestResult = {
+          ...result,
+          k,
+          clusterSizes,
+        };
+        // Continue to try higher k values
+      } else {
+        console.log(
+          `k=${k} is valid but only has ${totalPotentialRecs} potential recs (need ${minTotalRecommendations})`
+        );
+        // This k doesn't meet minimum recommendations, stop here
+        break;
+      }
+    } else {
+      // Found a k that doesn't work, stop and return the last valid k
+      console.log(`k=${k} is invalid, stopping search`);
+      break;
+    }
+  }
+
+  // If we found a valid k, return it
+  if (bestResult) {
+    console.log(`Selected k=${bestResult.k} as the maximum valid k`);
+    return bestResult;
+  }
+
+  // Fallback to k=1 if nothing works
+  console.log('No valid k found, falling back to k=1');
+  const fallbackResult = weightedKMeans(beers, 1);
+
+  // Use pre-fetched candidates for k=1 if available
+  const k1Candidates = candidatesByK['k1'];
+  const candidateEmbeddings = k1Candidates ? k1Candidates.map(beer => ({
+    beer_id: beer.beer_id,
+    embedding: beer.embedding,
+  })) : [];
+
+  const { clusterSizes } = await evaluateClusterQuality(
+    fallbackResult.centroids,
+    candidateEmbeddings.length > 0 ? candidateEmbeddings : undefined,
+    0, // No minimum for fallback
+    0 // No threshold for fallback
+  );
+
+  return {
+    ...fallbackResult,
+    k: 1,
+    clusterSizes,
+  };
+}
+
+/**
  * Adaptively select the best k value by trying different values
  * and checking cluster quality. Finds the MAXIMUM k where all clusters
  * still have enough items (stops at the last valid k before failure).
