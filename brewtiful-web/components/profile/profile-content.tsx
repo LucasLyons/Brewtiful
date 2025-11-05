@@ -1,12 +1,16 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { fetchRatedBeersPage, fetchSavedBeersPage, fetchSavedBreweriesPage } from '@/app/profile/actions-data'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BeersView } from '@/components/beer/beers-view'
 import { BreweriesView } from '@/components/brewery/breweries-view'
 import { ProfileBeerSearch } from '@/components/profile/profile-beer-search'
 import { ProfileBrewerySearch } from '@/components/profile/profile-brewery-search'
+import { DeleteAccountButton } from '@/components/auth/delete-account-button'
+import { ProfilePagination } from '@/components/profile/profile-pagination'
 
 interface Beer {
   beer_id: string
@@ -36,6 +40,13 @@ interface ProfileContentProps {
   initialRatedBeers: Beer[]
   initialSavedBeers: Beer[]
   initialSavedBreweries: Brewery[]
+  ratedBeersCount: number
+  savedBeersCount: number
+  savedBreweriesCount: number
+  ratedBeersPage: number
+  savedBeersPage: number
+  savedBreweriesPage: number
+  itemsPerPage: number
   savedBeerIds: Set<number>
   savedBreweryIds: Set<number>
   userRatings: Map<number, number>
@@ -46,10 +57,19 @@ export function ProfileContent({
   initialRatedBeers,
   initialSavedBeers,
   initialSavedBreweries,
+  ratedBeersCount,
+  savedBeersCount,
+  savedBreweriesCount,
+  ratedBeersPage,
+  savedBeersPage,
+  savedBreweriesPage,
+  itemsPerPage,
   savedBeerIds: initialSavedBeerIds,
   savedBreweryIds: initialSavedBreweryIds,
   userRatings: initialUserRatings,
 }: ProfileContentProps) {
+  const searchParams = useSearchParams()
+
   const [ratedBeers, setRatedBeers] = useState(initialRatedBeers)
   const [savedBeers, setSavedBeers] = useState(initialSavedBeers)
   const [savedBreweries, setSavedBreweries] = useState(initialSavedBreweries)
@@ -57,10 +77,51 @@ export function ProfileContent({
   const [savedBreweryIds, setSavedBreweryIds] = useState(initialSavedBreweryIds)
   const [userRatings, setUserRatings] = useState(initialUserRatings)
 
+  // Track counts client-side so they update immediately
+  const [currentRatedBeersCount, setCurrentRatedBeersCount] = useState(ratedBeersCount)
+  const [currentSavedBeersCount, setCurrentSavedBeersCount] = useState(savedBeersCount)
+  const [currentSavedBreweriesCount, setCurrentSavedBreweriesCount] = useState(savedBreweriesCount)
+
+  // Loading states
+  const [isLoadingRated, setIsLoadingRated] = useState(false)
+  const [isLoadingSavedBeers, setIsLoadingSavedBeers] = useState(false)
+  const [isLoadingSavedBreweries, setIsLoadingSavedBreweries] = useState(false)
+
   // Search query states
   const [ratedBeersSearchQuery, setRatedBeersSearchQuery] = useState("")
   const [savedBeersSearchQuery, setSavedBeersSearchQuery] = useState("")
   const [savedBreweriesSearchQuery, setSavedBreweriesSearchQuery] = useState("")
+
+  // Fetch data when pagination changes
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingRated(true)
+      const data = await fetchRatedBeersPage(ratedBeersPage, itemsPerPage)
+      setRatedBeers(data)
+      setIsLoadingRated(false)
+    }
+    fetchData()
+  }, [ratedBeersPage, itemsPerPage])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingSavedBeers(true)
+      const data = await fetchSavedBeersPage(savedBeersPage, itemsPerPage)
+      setSavedBeers(data)
+      setIsLoadingSavedBeers(false)
+    }
+    fetchData()
+  }, [savedBeersPage, itemsPerPage])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingSavedBreweries(true)
+      const data = await fetchSavedBreweriesPage(savedBreweriesPage, itemsPerPage)
+      setSavedBreweries(data)
+      setIsLoadingSavedBreweries(false)
+    }
+    fetchData()
+  }, [savedBreweriesPage, itemsPerPage])
 
   // Handler for when a beer is unrated
   const handleBeerUnrated = useCallback((beerId: number) => {
@@ -73,6 +134,9 @@ export function ProfileContent({
       newMap.delete(beerId)
       return newMap
     })
+
+    // Decrement count
+    setCurrentRatedBeersCount(prev => Math.max(0, prev - 1))
   }, [])
 
   // Handler for when a beer is unsaved
@@ -86,6 +150,9 @@ export function ProfileContent({
       newSet.delete(beerId)
       return newSet
     })
+
+    // Decrement count
+    setCurrentSavedBeersCount(prev => Math.max(0, prev - 1))
   }, [])
 
   // Handler for when a brewery is unsaved
@@ -99,6 +166,9 @@ export function ProfileContent({
       newSet.delete(breweryId)
       return newSet
     })
+
+    // Decrement count
+    setCurrentSavedBreweriesCount(prev => Math.max(0, prev - 1))
   }, [])
 
   // Handler for when a beer is rated (update rating value)
@@ -112,12 +182,21 @@ export function ProfileContent({
 
   // Handler for when a beer is saved
   const handleBeerSaved = useCallback((beerId: number) => {
+    // Track if this is a new save (not already in the Set)
+    let wasNewSave = false
+
     // Update saved beer IDs set
     setSavedBeerIds(prev => {
       const newSet = new Set(prev)
+      wasNewSave = !prev.has(beerId)
       newSet.add(beerId)
       return newSet
     })
+
+    // Only increment count if this was a new save
+    if (wasNewSave) {
+      setCurrentSavedBeersCount(prevCount => prevCount + 1)
+    }
 
     // If the beer exists in ratedBeers, also add it to savedBeers list
     setRatedBeers(currentRatedBeers => {
@@ -140,7 +219,14 @@ export function ProfileContent({
   const handleBrewerySaved = useCallback((breweryId: number) => {
     setSavedBreweryIds(prev => {
       const newSet = new Set(prev)
+      const wasNew = !prev.has(breweryId)
       newSet.add(breweryId)
+
+      // Only increment count if this is a new save
+      if (wasNew) {
+        setCurrentSavedBreweriesCount(prevCount => prevCount + 1)
+      }
+
       return newSet
     })
   }, [])
@@ -196,17 +282,34 @@ export function ProfileContent({
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="rated" className="w-full">
           <TabsList>
-            <TabsTrigger value="rated">Rated Beers ({ratedBeers.length})</TabsTrigger>
-            <TabsTrigger value="saved-beers">Saved Beers ({savedBeers.length})</TabsTrigger>
-            <TabsTrigger value="saved-breweries">Saved Breweries ({savedBreweries.length})</TabsTrigger>
+            <TabsTrigger value="rated">Rated Beers ({currentRatedBeersCount})</TabsTrigger>
+            <TabsTrigger value="saved-beers">Saved Beers ({currentSavedBeersCount})</TabsTrigger>
+            <TabsTrigger value="saved-breweries">Saved Breweries ({currentSavedBreweriesCount})</TabsTrigger>
           </TabsList>
 
           {/* Rated Beers Tab */}
           <TabsContent value="rated" className="mt-6">
             <div className="mb-6 max-w-2xl">
               <ProfileBeerSearch onSearch={setRatedBeersSearchQuery} />
+              {ratedBeersSearchQuery && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Searching within current page only. Clear search to browse all pages.
+                </p>
+              )}
             </div>
-            {filteredRatedBeers.length === 0 ? (
+            {!ratedBeersSearchQuery && (
+              <ProfilePagination
+                currentPage={ratedBeersPage}
+                totalItems={currentRatedBeersCount}
+                itemsPerPage={itemsPerPage}
+                pageParamName="ratedPage"
+              />
+            )}
+{isLoadingRated ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">Loading...</p>
+              </div>
+            ) : filteredRatedBeers.length === 0 ? (
               <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
                   {ratedBeers.length === 0
@@ -240,8 +343,25 @@ export function ProfileContent({
           <TabsContent value="saved-beers" className="mt-6">
             <div className="mb-6 max-w-2xl">
               <ProfileBeerSearch onSearch={setSavedBeersSearchQuery} />
+              {savedBeersSearchQuery && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Searching within current page only. Clear search to browse all pages.
+                </p>
+              )}
             </div>
-            {filteredSavedBeers.length === 0 ? (
+            {!savedBeersSearchQuery && (
+              <ProfilePagination
+                currentPage={savedBeersPage}
+                totalItems={currentSavedBeersCount}
+                itemsPerPage={itemsPerPage}
+                pageParamName="savedBeersPage"
+              />
+            )}
+{isLoadingSavedBeers ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">Loading...</p>
+              </div>
+            ) : filteredSavedBeers.length === 0 ? (
               <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
                   {savedBeers.length === 0
@@ -275,8 +395,25 @@ export function ProfileContent({
           <TabsContent value="saved-breweries" className="mt-6">
             <div className="mb-6 max-w-2xl">
               <ProfileBrewerySearch onSearch={setSavedBreweriesSearchQuery} />
+              {savedBreweriesSearchQuery && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Searching within current page only. Clear search to browse all pages.
+                </p>
+              )}
             </div>
-            {filteredSavedBreweries.length === 0 ? (
+            {!savedBreweriesSearchQuery && (
+              <ProfilePagination
+                currentPage={savedBreweriesPage}
+                totalItems={currentSavedBreweriesCount}
+                itemsPerPage={itemsPerPage}
+                pageParamName="savedBreweriesPage"
+              />
+            )}
+{isLoadingSavedBreweries ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">Loading...</p>
+              </div>
+            ) : filteredSavedBreweries.length === 0 ? (
               <div className="text-center py-16 border rounded-lg bg-muted/20 max-w-3xl mx-auto">
                 <p className="text-lg text-muted-foreground">
                   {savedBreweries.length === 0
@@ -303,6 +440,15 @@ export function ProfileContent({
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Delete Account Section - Moved to bottom */}
+        <div className="mt-12 mb-8 rounded-lg border border-destructive/20 bg-destructive/5 p-6 max-w-3xl">
+          <h2 className="text-lg font-semibold mb-2">Delete Account</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete your account and all associated data. This action will mark your account for deletion, which will be processed by the end of the day. You can restore your account by logging in again before deletion is complete.
+          </p>
+          <DeleteAccountButton />
+        </div>
       </div>
     </div>
   )

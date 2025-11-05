@@ -6,6 +6,7 @@ import { AuthButton } from "@/components/auth/auth-button";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
 import BrewtifulLogo from "@/components/layout/brewtiful-logo"
 import { NavigationTabs } from "@/components/layout/navigation-tabs";
+import { AccountRestoredMessage } from "@/components/auth/account-restored-message";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic'
@@ -57,6 +58,7 @@ export default async function RootLayout({
                 </div>
               </nav>
               <main className="flex-1 w-full flex flex-col items-center">
+                <AccountRestoredMessage />
                 {children}
               </main>
               <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-4">

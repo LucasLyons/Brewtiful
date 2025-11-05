@@ -12,6 +12,25 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Check if account is marked for deletion and restore if necessary
+      const { data: { user } } = await supabase.auth.getUser();
+      let wasRestored = false;
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('marked_for_deletion')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.marked_for_deletion) {
+          await supabase
+            .from('profiles')
+            .update({ marked_for_deletion: false })
+            .eq('id', user.id);
+          wasRestored = true;
+        }
+      }
       // Determine the correct redirect URL based on environment
       const isLocalhost = request.headers.get("host")?.includes("localhost");
 
@@ -21,10 +40,12 @@ export async function GET(request: NextRequest) {
         // Local development
         const protocol = request.headers.get("x-forwarded-proto") || "http";
         const host = request.headers.get("host");
-        redirectUrl = `${protocol}://${host}${next}`;
+        const baseUrl = `${protocol}://${host}${next}`;
+        redirectUrl = wasRestored ? `${baseUrl}${next.includes('?') ? '&' : '?'}restored=true` : baseUrl;
       } else {
         // Production
-        redirectUrl = `https://brewtiful.vercel.app${next}`;
+        const baseUrl = `https://brewtiful.vercel.app${next}`;
+        redirectUrl = wasRestored ? `${baseUrl}${next.includes('?') ? '&' : '?'}restored=true` : baseUrl;
       }
 
       return NextResponse.redirect(redirectUrl);

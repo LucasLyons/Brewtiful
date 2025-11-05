@@ -25,15 +25,42 @@ interface RatedBeerData {
 }
 
 /**
- * Fetches all rated beers with full details for the current user
+ * Fetches rated beers count for the current user
  */
-export async function getRatedBeers() {
+export async function getRatedBeersCount() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return 0
+  }
+
+  const { count, error } = await supabase
+    .from('user_ratings')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error fetching rated beers count:', error)
+    return 0
+  }
+
+  return count || 0
+}
+
+/**
+ * Fetches paginated rated beers with full details for the current user
+ */
+export async function getRatedBeers(page: number = 1, pageSize: number = 12) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return []
   }
+
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
 
   const { data, error } = await supabase
     .from('user_ratings')
@@ -58,6 +85,7 @@ export async function getRatedBeers() {
     `)
     .eq('user_id', user.id)
     .order('rating', { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error('Error fetching rated beers:', error)
@@ -92,15 +120,42 @@ interface SavedBeerData {
 }
 
 /**
- * Fetches all saved beers with full details for the current user
+ * Fetches saved beers count for the current user
  */
-export async function getSavedBeers() {
+export async function getSavedBeersCount() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return 0
+  }
+
+  const { count, error } = await supabase
+    .from('user_saved_beers')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error fetching saved beers count:', error)
+    return 0
+  }
+
+  return count || 0
+}
+
+/**
+ * Fetches paginated saved beers with full details for the current user
+ */
+export async function getSavedBeers(page: number = 1, pageSize: number = 12) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return []
   }
+
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
 
   const { data, error } = await supabase
     .from('user_saved_beers')
@@ -125,6 +180,7 @@ export async function getSavedBeers() {
     `)
     .eq('user_id', user.id)
     .order('ts', { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error('Error fetching saved beers:', error)
@@ -167,15 +223,42 @@ interface SavedBreweryData {
 }
 
 /**
- * Fetches all saved breweries with full details for the current user
+ * Fetches saved breweries count for the current user
  */
-export async function getSavedBreweries() {
+export async function getSavedBreweriesCount() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return 0
+  }
+
+  const { count, error } = await supabase
+    .from('user_saved_breweries')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error fetching saved breweries count:', error)
+    return 0
+  }
+
+  return count || 0
+}
+
+/**
+ * Fetches paginated saved breweries with full details for the current user
+ */
+export async function getSavedBreweries(page: number = 1, pageSize: number = 12) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return []
   }
+
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
 
   const { data, error } = await supabase
     .from('user_saved_breweries')
@@ -193,6 +276,7 @@ export async function getSavedBreweries() {
     `)
     .eq('user_id', user.id)
     .order('ts', { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error('Error fetching saved breweries:', error)
