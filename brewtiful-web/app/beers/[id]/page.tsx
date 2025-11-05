@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { BeerInfoCard } from '@/components/beer/beer-info-card';
 import { SimilarBeers } from '@/components/beer/similar-beers';
 import { getSimilarBeers } from '@/lib/recommendations/beer-similar';
+import { trackBeerView } from '@/lib/events/track-view';
 
 interface BeerDetailPageProps {
   params: Promise<{
@@ -37,6 +38,7 @@ export default async function BeerDetailPage({ params, searchParams }: BeerDetai
       active,
       user_review_count,
       scraped_review_count,
+      brewery_id,
       brewery:breweries!beers_brewery_id_fkey (
         brewery_id,
         name,
@@ -88,6 +90,18 @@ export default async function BeerDetailPage({ params, searchParams }: BeerDetai
     user_flagged_active: userFlag,
     is_authenticated: !!user
   };
+
+  // Track view event for authenticated users
+  if (user && beer.brewery_id) {
+    // Fire and forget - don't await to avoid blocking page render
+    trackBeerView({
+      beerId: beerIdNum,
+      breweryId: beer.brewery_id,
+      userId: user.id
+    }).catch(err => {
+      console.error('Failed to track beer view:', err);
+    });
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">

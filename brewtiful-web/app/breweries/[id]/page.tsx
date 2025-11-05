@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { BreweryInfoCard } from '@/components/brewery/brewery-info-card';
 import { BreweryBeersSection } from '@/components/brewery/brewery-beers-section';
+import { trackBreweryView } from '@/lib/events/track-view';
 
 interface BreweryDetailPageProps {
   params: Promise<{
@@ -35,6 +36,20 @@ export default async function BreweryDetailPage({ params, searchParams }: Brewer
 
   if (breweryError || !brewery) {
     notFound();
+  }
+
+  // Get current user for view tracking
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Track view event for authenticated users
+  if (user) {
+    // Fire and forget - don't await to avoid blocking page render
+    trackBreweryView({
+      breweryId: breweryIdNum,
+      userId: user.id
+    }).catch(err => {
+      console.error('Failed to track brewery view:', err);
+    });
   }
 
   return (
