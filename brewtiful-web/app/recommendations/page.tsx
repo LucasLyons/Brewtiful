@@ -91,7 +91,7 @@ export default async function RecommendationsPage() {
   // Fetch user's rated beers with embeddings
   const ratedBeers = await getUserRatedBeersWithEmbeddings(userId);
 
-  return (
+  return ratedBeers.length === 0 ? (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Your Recommendations</h1>
@@ -99,26 +99,23 @@ export default async function RecommendationsPage() {
           Personalized beer recommendations based on your tastes!
         </p>
       </div>
-
-      {ratedBeers.length === 0 ? (
-        <div className="bg-card border rounded-lg p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">No ratings yet</h2>
-          <p className="text-muted-foreground mb-4">
-            Start rating some beers to get personalized recommendations!
-          </p>
-          <Link
-            href="/beers"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-          >
-            Browse Beers
-          </Link>
-        </div>
-      ) : (
-        <KMeansRecommendations
-          ratedBeers={ratedBeers}
-          userId={userId}
-        />
-      )}
+      <div className="bg-card border rounded-lg p-8 text-center">
+        <h2 className="text-xl font-semibold mb-2">No ratings yet</h2>
+        <p className="text-muted-foreground mb-4">
+          Start rating some beers to get personalized recommendations!
+        </p>
+        <Link
+          href="/beers"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+        >
+          Browse Beers
+        </Link>
+      </div>
     </div>
+  ) : (
+    <KMeansRecommendations
+      ratedBeers={ratedBeers}
+      userId={userId}
+    />
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   adaptiveKMeansWithPrefetch,
@@ -23,6 +23,7 @@ import { BeerCard } from '@/components/beer/beer-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RecommendationsFiltersSidebar } from './recommendations-filters-sidebar';
 
 interface KMeansRecommendationsProps {
   ratedBeers: RatedBeer[];
@@ -37,6 +38,16 @@ export function KMeansRecommendations({
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
+  // Get filter params from URL
+  const filterBreweries = searchParams.get('breweries')?.split(',').filter(Boolean) || [];
+  const filterStyles = searchParams.get('styles')?.split(',').filter(Boolean) || [];
+  const filterLocations = searchParams.get('locations')?.split(',').filter(Boolean) || [];
+  const filterCities = searchParams.get('cities')?.split(',').filter(Boolean) || [];
+  const abvMin = searchParams.get('abvMin') ? parseFloat(searchParams.get('abvMin')!) : undefined;
+  const abvMax = searchParams.get('abvMax') ? parseFloat(searchParams.get('abvMax')!) : undefined;
+  const includeInactive = searchParams.get('includeInactive') === 'true';
+  const includeUnknown = searchParams.get('includeUnknown') !== 'false';
+
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Computing recommendations...');
   const [recommendations, setRecommendations] = useState<CandidateBeer[]>([]);
@@ -50,7 +61,134 @@ export function KMeansRecommendations({
   const [cachedCandidates, setCachedCandidates] = useState<CandidateBeer[]>([]);
   const [isClusteringDone, setIsClusteringDone] = useState(false);
 
+  // Sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const RECS_PER_PAGE = 12;
+
+  // Calculate available filter options based on current filters
+  // Using useMemo to avoid recalculating on every render
+  const availableBreweries = useMemo(() => {
+    // Apply all filters EXCEPT brewery filter
+    let filtered = cachedCandidates;
+
+    if (filterStyles.length > 0) {
+      filtered = filtered.filter((beer) => filterStyles.includes(beer.style));
+    }
+    if (filterLocations.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_country && filterLocations.includes(beer.brewery_country));
+    }
+    if (filterCities.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_city && filterCities.includes(beer.brewery_city));
+    }
+    if (abvMin !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv >= abvMin);
+    }
+    if (abvMax !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv <= abvMax);
+    }
+
+    return Array.from(
+      new Set(filtered.map((b) => b.brewery_name).filter(Boolean))
+    ).sort() as string[];
+  }, [cachedCandidates, filterStyles.join(','), filterLocations.join(','), filterCities.join(','), abvMin, abvMax]);
+
+  const availableStyles = useMemo(() => {
+    // Apply all filters EXCEPT style filter
+    let filtered = cachedCandidates;
+
+    if (filterBreweries.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_name && filterBreweries.includes(beer.brewery_name));
+    }
+    if (filterLocations.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_country && filterLocations.includes(beer.brewery_country));
+    }
+    if (filterCities.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_city && filterCities.includes(beer.brewery_city));
+    }
+    if (abvMin !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv >= abvMin);
+    }
+    if (abvMax !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv <= abvMax);
+    }
+
+    return Array.from(
+      new Set(filtered.map((b) => b.style).filter(Boolean))
+    ).sort() as string[];
+  }, [cachedCandidates, filterBreweries.join(','), filterLocations.join(','), filterCities.join(','), abvMin, abvMax]);
+
+  const availableLocations = useMemo(() => {
+    // Apply all filters EXCEPT location filter
+    let filtered = cachedCandidates;
+
+    if (filterBreweries.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_name && filterBreweries.includes(beer.brewery_name));
+    }
+    if (filterStyles.length > 0) {
+      filtered = filtered.filter((beer) => filterStyles.includes(beer.style));
+    }
+    if (filterCities.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_city && filterCities.includes(beer.brewery_city));
+    }
+    if (abvMin !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv >= abvMin);
+    }
+    if (abvMax !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv <= abvMax);
+    }
+
+    return Array.from(
+      new Set(filtered.map((b) => b.brewery_country).filter(Boolean))
+    ).sort() as string[];
+  }, [cachedCandidates, filterBreweries.join(','), filterStyles.join(','), filterCities.join(','), abvMin, abvMax]);
+
+  const availableCities = useMemo(() => {
+    // Apply all filters EXCEPT city filter
+    let filtered = cachedCandidates;
+
+    if (filterBreweries.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_name && filterBreweries.includes(beer.brewery_name));
+    }
+    if (filterStyles.length > 0) {
+      filtered = filtered.filter((beer) => filterStyles.includes(beer.style));
+    }
+    if (filterLocations.length > 0) {
+      filtered = filtered.filter((beer) => beer.brewery_country && filterLocations.includes(beer.brewery_country));
+    }
+    if (abvMin !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv >= abvMin);
+    }
+    if (abvMax !== undefined) {
+      filtered = filtered.filter((beer) => beer.abv !== null && beer.abv <= abvMax);
+    }
+
+    return Array.from(
+      new Set(filtered.map((b) => b.brewery_city).filter(Boolean))
+    ).sort() as string[];
+  }, [cachedCandidates, filterBreweries.join(','), filterStyles.join(','), filterLocations.join(','), abvMin, abvMax]);
+
+  // Load sidebar state from localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem("recommendationsFiltersSidebarOpen");
+    if (savedState !== null) {
+      setIsSidebarOpen(savedState === "true");
+    }
+  }, []);
+
+  // Save sidebar state to localStorage
+  const handleToggleSidebar = () => {
+    const newState = !isSidebarOpen;
+    setIsSidebarOpen(newState);
+    localStorage.setItem("recommendationsFiltersSidebarOpen", String(newState));
+  };
+
+  // Helper function to build URL with all current search params
+  const buildUrlWithPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page.toString());
+    return `/recommendations?${params.toString()}`;
+  };
 
   // Effect 1: Compute clusters and fetch candidates once with caching
   useEffect(() => {
@@ -211,11 +349,59 @@ export function KMeansRecommendations({
     computeClusters();
   }, [initialRatedBeers, userId]);
 
-  // Effect 2: Compute paginated recommendations when page changes
+  // Effect 2: Compute paginated recommendations when page changes or filters change
   useEffect(() => {
     if (!isClusteringDone || cachedCandidates.length === 0) {
       return;
     }
+
+    // Apply filters to cached candidates
+    let filteredCandidates = cachedCandidates;
+
+    // Filter by brewery
+    if (filterBreweries.length > 0) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        beer.brewery_name && filterBreweries.includes(beer.brewery_name)
+      );
+    }
+
+    // Filter by style
+    if (filterStyles.length > 0) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        filterStyles.includes(beer.style)
+      );
+    }
+
+    // Filter by country
+    if (filterLocations.length > 0) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        beer.brewery_country && filterLocations.includes(beer.brewery_country)
+      );
+    }
+
+    // Filter by city
+    if (filterCities.length > 0) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        beer.brewery_city && filterCities.includes(beer.brewery_city)
+      );
+    }
+
+    // Filter by ABV range
+    if (abvMin !== undefined) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        beer.abv !== null && beer.abv >= abvMin
+      );
+    }
+    if (abvMax !== undefined) {
+      filteredCandidates = filteredCandidates.filter((beer) =>
+        beer.abv !== null && beer.abv <= abvMax
+      );
+    }
+
+    // Filter by active status
+    // Candidates don't have active_status field, so we'll need to fetch it
+    // For now, we'll skip this filter for candidates that don't have the field
+    // The API should already be filtering by active status
 
     // Calculate offset based on current page
     const offset = (currentPage - 1) * RECS_PER_PAGE;
@@ -223,9 +409,9 @@ export function KMeansRecommendations({
     // Get rated beer IDs for seeding
     const ratedBeerIds = initialRatedBeers.map(beer => beer.beer_id);
 
-    // Use diverse ranking with candidates that include quality fields
+    // Use diverse ranking with filtered candidates that include quality fields
     const recommendResult = recommendFromCentroids(
-      cachedCandidates, // Includes similarity, cluster_index, bias_term, scraped_review_count
+      filteredCandidates, // Includes similarity, cluster_index, bias_term, scraped_review_count
       userId,
       ratedBeerIds,
       RECS_PER_PAGE,
@@ -237,7 +423,21 @@ export function KMeansRecommendations({
     setHasMore(recommendResult.hasMore);
     setTotalAvailable(recommendResult.totalAvailable);
 
-  }, [currentPage, isClusteringDone, cachedCandidates, RECS_PER_PAGE, userId, initialRatedBeers]);
+  }, [
+    currentPage,
+    isClusteringDone,
+    cachedCandidates,
+    userId,
+    initialRatedBeers,
+    filterBreweries.join(','),
+    filterStyles.join(','),
+    filterLocations.join(','),
+    filterCities.join(','),
+    abvMin,
+    abvMax,
+    includeInactive,
+    includeUnknown
+  ]);
 
   // Effect 3: Batch fetch saved states and ratings when recommendations change
   useEffect(() => {
@@ -308,19 +508,49 @@ export function KMeansRecommendations({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Recommendations */}
-      <div>
-        {recommendations.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">
-                No recommendations found. Try rating more beers to build a stronger taste profile!
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
+    <>
+      <RecommendationsFiltersSidebar
+        availableBreweries={availableBreweries}
+        availableStyles={availableStyles}
+        availableLocations={availableLocations}
+        availableCities={availableCities}
+        isOpen={isSidebarOpen}
+        onToggle={handleToggleSidebar}
+      />
+      <div
+        className={`transition-all duration-300 ${
+          isSidebarOpen ? "ml-64" : "ml-0"
+        }`}
+      >
+        <div className="container mx-auto px-4 py-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Your Recommendations</h1>
+            <p className="text-muted-foreground">
+              Personalized beer recommendations based on your tastes!
+            </p>
+          </div>
+
+          {/* Recommendations */}
+          <div>
+            {recommendations.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground">
+                    {totalAvailable === 0 && cachedCandidates.length > 0
+                      ? "No recommendations match your current filters. Try adjusting or resetting your filters."
+                      : "No recommendations found. Try rating more beers to build a stronger taste profile!"}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
           <>
+            {/* Result count display */}
+            <div className="mb-4 text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * RECS_PER_PAGE + 1}-{Math.min(currentPage * RECS_PER_PAGE, totalAvailable)} of {totalAvailable} recommendations
+              {(filterBreweries.length > 0 || filterStyles.length > 0 || filterLocations.length > 0 || filterCities.length > 0 || abvMin !== undefined || abvMax !== undefined) && ' (filtered)'}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {recommendations.map((beer) => (
                 <BeerCard
@@ -387,7 +617,7 @@ export function KMeansRecommendations({
                     variant="outline"
                     size="icon"
                     onClick={() => {
-                      router.push(`/recommendations?page=1`);
+                      router.push(buildUrlWithPage(1));
                     }}
                     disabled={currentPage === 1}
                   >
@@ -400,7 +630,7 @@ export function KMeansRecommendations({
                     size="icon"
                     onClick={() => {
                       const newPage = Math.max(1, currentPage - 1);
-                      router.push(`/recommendations?page=${newPage}`);
+                      router.push(buildUrlWithPage(newPage));
                     }}
                     disabled={currentPage <= 1}
                   >
@@ -423,7 +653,7 @@ export function KMeansRecommendations({
                           variant={currentPage === page ? 'default' : 'outline'}
                           size="icon"
                           onClick={() => {
-                            router.push(`/recommendations?page=${page}`);
+                            router.push(buildUrlWithPage(page as number));
                           }}
                         >
                           {page}
@@ -437,7 +667,7 @@ export function KMeansRecommendations({
                     size="icon"
                     onClick={() => {
                       const newPage = currentPage + 1;
-                      router.push(`/recommendations?page=${newPage}`);
+                      router.push(buildUrlWithPage(newPage));
                     }}
                     disabled={!hasMore}
                   >
@@ -448,7 +678,7 @@ export function KMeansRecommendations({
                     variant="outline"
                     size="icon"
                     onClick={() => {
-                      router.push(`/recommendations?page=${totalPages}`);
+                      router.push(buildUrlWithPage(totalPages));
                     }}
                     disabled={currentPage === totalPages}
                   >
@@ -460,7 +690,9 @@ export function KMeansRecommendations({
             })()}
           </>
         )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
