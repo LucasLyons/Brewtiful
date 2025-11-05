@@ -15,10 +15,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch candidate beers using pgvector
+    // Default to 50 beers per centroid 
     const candidateBeers = await getCandidateBeersFromCentroids(
       centroids,
       userId || null,
-      beersPerCentroid || 10,
+      beersPerCentroid || 50,
       showInactive || false
     );
 

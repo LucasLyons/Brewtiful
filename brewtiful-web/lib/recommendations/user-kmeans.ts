@@ -15,6 +15,10 @@ export interface RatedBeer {
 export interface CandidateBeer {
   beer_id: number;
   embedding: number[];
+  similarity: number; // Cosine distance to centroid (from RPC function)
+  cluster_index: number; // Which cluster this beer belongs to
+  bias_term: number; // LightFM bias term for quality scoring
+  scraped_review_count: number; // Popularity metric from BeerAdvocate
   name: string;
   style: string;
   abv: number | null;
@@ -172,6 +176,7 @@ export async function getCandidateBeersFromCentroids(
   const centroidVectors = centroids.map((c) => `[${c.join(',')}]`);
 
   // Call RPC function to get similar beers for each centroid
+  // This now returns similarity, bias_term, and scraped_review_count
   const { data: similarBeers, error: rpcError } = await supabase.rpc(
     'get_beers_similar_to_centroids',
     {
@@ -190,14 +195,24 @@ export async function getCandidateBeersFromCentroids(
     return [];
   }
 
-  // Get unique beer IDs, excluding rated beers
-  const uniqueBeerIds = Array.from(
-    new Set(
-      similarBeers
-        .map((sb: { beer_id: number }) => sb.beer_id)
-        .filter((id: number) => !ratedBeerIds.includes(id))
-    )
-  );
+  // Create map of beer_id to RPC metadata (similarity, cluster_index, bias_term, etc.)
+  type SimilarBeer = {
+    beer_id: number;
+    centroid_index: number;
+    similarity: number;
+    bias_term: number;
+    scraped_review_count: number;
+  };
+
+  const beerMetadata = new Map<number, SimilarBeer>();
+  for (const sb of similarBeers as SimilarBeer[]) {
+    // Exclude rated beers
+    if (!ratedBeerIds.includes(sb.beer_id)) {
+      beerMetadata.set(sb.beer_id, sb);
+    }
+  }
+
+  const uniqueBeerIds = Array.from(beerMetadata.keys());
 
   if (uniqueBeerIds.length === 0) {
     return [];
@@ -235,7 +250,7 @@ export async function getCandidateBeersFromCentroids(
     return [];
   }
 
-  // Transform the data
+  // Transform the data, enriching with RPC metadata
   const candidateBeers: CandidateBeer[] = candidates
     .filter((c) => {
       const embeddingObj = Array.isArray(c.beer_embeddings)
@@ -269,9 +284,16 @@ export async function getCandidateBeersFromCentroids(
         embedding = JSON.parse(embedding);
       }
 
+      // Get metadata from RPC response
+      const metadata = beerMetadata.get(c.beer_id)!;
+
       return {
         beer_id: c.beer_id,
         embedding: embedding,
+        similarity: metadata.similarity,
+        cluster_index: metadata.centroid_index,
+        bias_term: metadata.bias_term,
+        scraped_review_count: metadata.scraped_review_count,
         name: c.name,
         style: c.style,
         abv: c.abv,

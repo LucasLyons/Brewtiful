@@ -7,6 +7,7 @@ import {
   recommendFromCentroids,
   type BeerEmbedding,
 } from '@/lib/recommendations/kmeans';
+import { RANKING_PARAMS } from '@/lib/recommendations/config';
 import type {
   RatedBeer,
   CandidateBeer,
@@ -55,7 +56,7 @@ export function KMeansRecommendations({
   // Effect 1: Compute clusters and fetch candidates once with caching
   useEffect(() => {
     const K_RANGE = [1, 2, 5, 7, 10, 15];
-    const BEERS_PER_CENTROID = 200; // For evaluation
+    const BEERS_PER_CENTROID = 72; // 3 pages of 24 items for performance
     async function computeClusters() {
       setIsLoading(true);
       setIsClusteringDone(false);
@@ -193,35 +194,29 @@ export function KMeansRecommendations({
     if (!isClusteringDone || !cachedCentroids || cachedCandidates.length === 0) {
       return;
     }
-    // Convert candidate beers to BeerEmbedding format
-    const candidateEmbeddings: BeerEmbedding[] = cachedCandidates.map(
-      (beer) => ({
-        beer_id: beer.beer_id,
-        embedding: beer.embedding,
-      })
-    );
 
     // Calculate offset based on current page
     const offset = (currentPage - 1) * RECS_PER_PAGE;
 
+    // Get rated beer IDs for seeding
+    const ratedBeerIds = initialRatedBeers.map(beer => beer.beer_id);
+
+    // Use new diverse ranking with candidates that include quality fields
     const recommendResult = recommendFromCentroids(
       cachedCentroids,
-      candidateEmbeddings,
+      cachedCandidates, // Now includes similarity, cluster_index, bias_term, scraped_review_count
+      userId,
+      ratedBeerIds,
       RECS_PER_PAGE,
-      offset
+      offset,
+      RANKING_PARAMS
     );
-    // Map back to full candidate beer objects
-    const recommendedBeers = recommendResult.recommendations
-      .map((emb) =>
-        cachedCandidates.find((b) => b.beer_id === emb.beer_id)
-      )
-      .filter((b): b is CandidateBeer => b !== undefined);
 
-    setRecommendations(recommendedBeers);
+    setRecommendations(recommendResult.recommendations);
     setHasMore(recommendResult.hasMore);
     setTotalAvailable(recommendResult.totalAvailable);
 
-  }, [currentPage, isClusteringDone, cachedCentroids, cachedCandidates, RECS_PER_PAGE]);
+  }, [currentPage, isClusteringDone, cachedCentroids, cachedCandidates, RECS_PER_PAGE, userId, initialRatedBeers]);
 
   // Effect 3: Batch fetch saved states and ratings when recommendations change
   useEffect(() => {

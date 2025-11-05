@@ -42,10 +42,11 @@ export async function POST(request: NextRequest) {
         throw new Error(`Invalid centroids for k=${k}`);
       }
 
+      // Default to 50 beers per centroid for performance
       const candidateBeers = await getCandidateBeersFromCentroids(
         centroids,
         userId || null,
-        beersPerCentroid || 100,
+        beersPerCentroid || 50,
         showInactive || false
       );
 

@@ -1,6 +1,12 @@
 import type {
   CandidateBeer,
 } from '@/lib/recommendations/user-kmeans';
+import {
+  diverseRanking,
+  createRecommendationSeed,
+  type RankedCandidateBeer,
+} from '@/lib/recommendations/diverse-ranking';
+import type { RankingParams } from '@/lib/recommendations/config';
 
 /**
  * K-means clustering utilities for beer recommendations
@@ -339,74 +345,48 @@ export function findMostSimilar(
 }
 
 /**
- * Find beers most similar to cluster centroids using round-robin selection
- * Recommends 1 beer per cluster per round until targetCount is reached
+ * Find beers most similar to cluster centroids using diverse ranking algorithm
+ * Uses multi-level diversity (inter-cluster and intra-cluster) with quality weighting
+ *
  * @param centroids - Cluster centroids from k-means
- * @param candidates - Candidate beers to recommend
+ * @param candidates - Candidate beers with similarity, bias_term, and review counts
+ * @param userId - User ID for deterministic seeding
+ * @param ratedBeerIds - IDs of beers user has rated (for seed reproducibility)
  * @param targetCount - Target number of recommendations per page (default 12)
  * @param offset - Number of recommendations to skip (for pagination, default 0)
+ * @param rankingParams - Optional ranking parameters (alpha, lambda, beta, etc.)
  * @returns Object with recommendations array and metadata
  */
 export function recommendFromCentroids(
   centroids: number[][],
-  candidates: BeerEmbedding[],
+  candidates: CandidateBeer[],
+  userId: string | null,
+  ratedBeerIds: number[],
   targetCount: number = 12,
-  offset: number = 0
-): { recommendations: BeerEmbedding[]; hasMore: boolean; totalAvailable: number } {
-  const allRecommendations: BeerEmbedding[] = [];
-  const usedBeerIds = new Set<number>();
+  offset: number = 0,
+  rankingParams?: RankingParams
+): { recommendations: CandidateBeer[]; hasMore: boolean; totalAvailable: number } {
+  // Group candidates by cluster_index
+  const candidatesByCluster = new Map<number, RankedCandidateBeer[]>();
 
-  // Pre-compute all similarities for each centroid
-  const centroidCandidates: BeerEmbedding[][] = centroids.map((centroid) => {
-    const similarities = candidates.map((beer) => ({
-      beer,
-      similarity: cosineSimilarity(centroid, beer.embedding),
-    }));
-
-    // Sort by similarity descending
-    similarities.sort((a, b) => b.similarity - a.similarity);
-
-    return similarities.map((s) => s.beer);
-  });
-
-  // Calculate maximum possible recommendations
-  const maxPossible = centroidCandidates.reduce((sum, cluster) => sum + cluster.length, 0);
-
-  // Track the current position for each cluster independently
-  const clusterPositions = new Array(centroids.length).fill(0);
-
-  // Round-robin selection: take 1 beer from each cluster per round
-  // Generate ALL possible recommendations (not just enough for current page)
-  while (allRecommendations.length < maxPossible) {
-    let addedThisRound = false;
-
-    for (let clusterIdx = 0; clusterIdx < centroids.length; clusterIdx++) {
-      const clusterCandidates = centroidCandidates[clusterIdx];
-      const startPos = clusterPositions[clusterIdx];
-
-      // Find next unused beer for this cluster starting from its current position
-      let beer: BeerEmbedding | undefined;
-      for (let i = startPos; i < clusterCandidates.length; i++) {
-        if (!usedBeerIds.has(clusterCandidates[i].beer_id)) {
-          beer = clusterCandidates[i];
-          // Update this cluster's position to the next index
-          clusterPositions[clusterIdx] = i + 1;
-          break;
-        }
-      }
-
-      if (beer) {
-        allRecommendations.push(beer);
-        usedBeerIds.add(beer.beer_id);
-        addedThisRound = true;
-      }
+  for (const candidate of candidates) {
+    const clusterIndex = candidate.cluster_index;
+    if (!candidatesByCluster.has(clusterIndex)) {
+      candidatesByCluster.set(clusterIndex, []);
     }
-
-    // If we couldn't add any beers this round, we've exhausted candidates
-    if (!addedThisRound) {
-      break;
-    }
+    // Cast to RankedCandidateBeer (they have the same fields)
+    candidatesByCluster.get(clusterIndex)!.push(candidate as RankedCandidateBeer);
   }
+
+  // Create deterministic seed from user ID and rated beer IDs
+  const seed = createRecommendationSeed(userId, ratedBeerIds);
+
+  // Apply diverse ranking algorithm
+  const allRecommendations = diverseRanking(
+    candidatesByCluster,
+    seed,
+    rankingParams
+  );
 
   // Apply pagination: skip offset items and take targetCount
   const paginatedRecommendations = allRecommendations.slice(offset, offset + targetCount);
