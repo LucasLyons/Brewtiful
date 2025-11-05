@@ -345,11 +345,10 @@ export function findMostSimilar(
 }
 
 /**
- * Find beers most similar to cluster centroids using diverse ranking algorithm
+ * Generate diverse recommendations from clustered candidates
  * Uses multi-level diversity (inter-cluster and intra-cluster) with quality weighting
  *
- * @param centroids - Cluster centroids from k-means
- * @param candidates - Candidate beers with similarity, bias_term, and review counts
+ * @param candidates - Candidate beers with cluster_index, similarity, bias_term, and review counts
  * @param userId - User ID for deterministic seeding
  * @param ratedBeerIds - IDs of beers user has rated (for seed reproducibility)
  * @param targetCount - Target number of recommendations per page (default 12)
@@ -358,7 +357,6 @@ export function findMostSimilar(
  * @returns Object with recommendations array and metadata
  */
 export function recommendFromCentroids(
-  centroids: number[][],
   candidates: CandidateBeer[],
   userId: string | null,
   ratedBeerIds: number[],

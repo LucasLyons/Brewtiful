@@ -267,7 +267,11 @@ export function diverseRanking(
 
     const lastSelected = lastSelectedFromCluster.get(selectedClusterIndex);
 
-    if (lastSelected) {
+    // Check if embeddings are available for diversity checks
+    // (embeddings are stripped from cache to save space)
+    const hasEmbeddings = clusterCandidates[pointer]?.embedding !== undefined;
+
+    if (lastSelected && hasEmbeddings) {
       // Apply diversity penalty: reduce score if too similar to last selected
       let bestCandidate = clusterCandidates[pointer];
       let bestAdjustedScore = bestCandidate.score ?? 0;
@@ -278,6 +282,12 @@ export function diverseRanking(
 
       for (let i = 0; i < lookAhead; i++) {
         const candidate = clusterCandidates[pointer + i];
+
+        // Skip if embeddings missing
+        if (!candidate.embedding || !lastSelected.embedding) {
+          continue;
+        }
+
         const similarity = cosineSimilarity(
           candidate.embedding,
           lastSelected.embedding
@@ -303,7 +313,7 @@ export function diverseRanking(
       const selectedIndex = clusterCandidates.indexOf(selectedCandidate);
       clusterPointers.set(selectedClusterIndex, selectedIndex + 1);
     } else {
-      // First selection from this cluster: just take top item
+      // First selection from this cluster OR no embeddings available: just take top item
       selectedCandidate = clusterCandidates[pointer];
       clusterPointers.set(selectedClusterIndex, pointer + 1);
     }

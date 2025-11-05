@@ -5,8 +5,28 @@
 
 import type { CandidateBeer } from '@/lib/recommendations/user-kmeans';
 
+/**
+ * Lightweight version of CandidateBeer for caching
+ * Excludes embedding vector to reduce size and prevent quota errors
+ */
+export interface CachedCandidateBeer {
+  beer_id: number;
+  similarity: number;
+  cluster_index: number;
+  bias_term: number;
+  scraped_review_count: number;
+  name: string;
+  style: string;
+  abv: number | null;
+  brewery_id: number | null;
+  brewery_name?: string;
+  brewery_city?: string;
+  brewery_country?: string;
+  description?: string;
+}
+
 interface CachedRecommendations {
-  candidatesByK: Record<string, CandidateBeer[]>;
+  candidatesByK: Record<string, CachedCandidateBeer[]>;
   timestamp: number;
   ratingHash: string;
   userId: string | null;
@@ -15,7 +35,7 @@ interface CachedRecommendations {
 }
 
 const CACHE_KEY_PREFIX = 'brewtiful_kmeans_cache_';
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2'; // Bumped version to invalidate old caches with embeddings
 const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 /**
@@ -50,7 +70,18 @@ function isCacheValid(cachedData: CachedRecommendations): boolean {
 }
 
 /**
+ * Convert CandidateBeer to CachedCandidateBeer by removing embedding
+ * This significantly reduces cache size
+ */
+function stripEmbedding(candidate: CandidateBeer): CachedCandidateBeer {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { embedding, ...rest } = candidate;
+  return rest;
+}
+
+/**
  * Save recommendations to localStorage cache
+ * Strips embeddings to reduce size and prevent quota errors
  */
 export function saveCandidatesToCache(
   userId: string | null,
@@ -63,8 +94,14 @@ export function saveCandidatesToCache(
     const ratingHash = generateRatingHash(ratedBeerIds);
     const cacheKey = getCacheKey(userId, ratingHash);
 
+    // Strip embeddings to reduce cache size (from ~500KB to ~50KB)
+    const lightweightCandidates: Record<string, CachedCandidateBeer[]> = {};
+    for (const [k, candidates] of Object.entries(candidatesByK)) {
+      lightweightCandidates[k] = candidates.map(stripEmbedding);
+    }
+
     const cacheData: CachedRecommendations = {
-      candidatesByK,
+      candidatesByK: lightweightCandidates,
       timestamp: Date.now(),
       ratingHash,
       userId,
@@ -72,12 +109,31 @@ export function saveCandidatesToCache(
       beersPerCentroid
     };
 
-    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    const serialized = JSON.stringify(cacheData);
+
+    // Check size before saving (localStorage limit is typically 5-10MB per domain)
+    const sizeInBytes = new Blob([serialized]).size;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+
+    if (sizeInMB > 4) {
+      console.warn(`⚠️  Cache data too large (${sizeInMB.toFixed(2)}MB), skipping cache save`);
+      return;
+    }
+
+    localStorage.setItem(cacheKey, serialized);
+    console.log(`💾 Saved ${sizeInMB.toFixed(2)}MB to cache (${Object.keys(lightweightCandidates).length} k values)`);
 
     // Clean up old cache entries (keep only most recent 3)
     cleanupOldCaches(userId);
   } catch (error) {
-    console.warn('Failed to save recommendations to cache:', error);
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('⚠️  localStorage quota exceeded, clearing old caches...');
+      // Try to free up space
+      cleanupOldCaches(userId, 1);
+      // Don't retry to avoid infinite loop
+    } else {
+      console.warn('Failed to save recommendations to cache:', error);
+    }
     // Cache failure shouldn't break the app
   }
 }
@@ -85,13 +141,14 @@ export function saveCandidatesToCache(
 /**
  * Load recommendations from localStorage cache
  * Returns null if cache miss or invalid
+ * Note: Cached data does NOT include embeddings (stripped to save space)
  */
 export function loadCandidatesFromCache(
   userId: string | null,
   ratedBeerIds: number[],
   kRange: number[],
   beersPerCentroid: number
-): Record<string, CandidateBeer[]> | null {
+): Record<string, CachedCandidateBeer[]> | null {
   try {
     const ratingHash = generateRatingHash(ratedBeerIds);
     const cacheKey = getCacheKey(userId, ratingHash);

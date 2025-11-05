@@ -46,9 +46,8 @@ export function KMeansRecommendations({
   const [savedStates, setSavedStates] = useState<Map<number, boolean>>(new Map());
   const [ratings, setRatings] = useState<Map<number, number>>(new Map());
 
-  // Cache candidates and cluster results to avoid re-computation
+  // Cache candidates to avoid re-computation
   const [cachedCandidates, setCachedCandidates] = useState<CandidateBeer[]>([]);
-  const [cachedCentroids, setCachedCentroids] = useState<number[][] | null>(null);
   const [isClusteringDone, setIsClusteringDone] = useState(false);
 
   const RECS_PER_PAGE = 12;
@@ -93,9 +92,34 @@ export function KMeansRecommendations({
         let candidatesByK: Record<string, CandidateBeer[]>;
 
         if (cachedCandidatesByK) {
-          console.log('✅ Using cached candidates');
-          setLoadingMessage('Loading from cache...');
-          candidatesByK = cachedCandidatesByK;
+          console.log('✅ Cache hit - loaded recommendations from localStorage');
+          setLoadingMessage('Using cached candidates (without embeddings for faster load)');
+
+          // Cast cached data (without embeddings) to CandidateBeer type
+          candidatesByK = cachedCandidatesByK as unknown as Record<string, CandidateBeer[]>;
+
+          // When using cache, pick the best available k value
+          // Prefer higher k for more diversity, but ensure we have candidates
+          const availableKs = Object.keys(candidatesByK)
+            .map(k => parseInt(k.replace('k', '')))
+            .filter(k => candidatesByK[`k${k}`]?.length > 0)
+            .sort((a, b) => b - a); // Sort descending (highest k first)
+
+          if (availableKs.length === 0) {
+            throw new Error('No valid cached candidates found');
+          }
+
+          const selectedK = availableKs[0]; // Use highest k available
+          console.log(`Using cached k=${selectedK} (from cache, no re-evaluation needed)`);
+
+          // Get candidates for selected k (already have cluster assignments)
+          const selectedKKey = `k${selectedK}`;
+          const finalCandidates = candidatesByK[selectedKKey] || [];
+
+          console.log('Using cached candidates:', finalCandidates.length);
+
+          setCachedCandidates(finalCandidates);
+          setIsClusteringDone(true);
         } else {
           console.log('📡 Fetching candidates from API...');
           setLoadingMessage('Computing taste clusters...');
@@ -150,32 +174,30 @@ export function KMeansRecommendations({
             K_RANGE,
             BEERS_PER_CENTROID
           );
+
+          // Phase 2: Use adaptive k-means with pre-fetched candidates
+          setLoadingMessage('Optimizing cluster quality...');
+          const result = await adaptiveKMeansWithPrefetch(
+            ratedEmbeddings,
+            candidatesByK,
+            K_RANGE,
+            5,
+            0.5,
+            12
+          );
+
+          console.log(`Adaptive k-means selected k=${result.k}`);
+
+          // Phase 3: Get final candidates for selected k
+          setLoadingMessage('Preparing recommendations...');
+          const selectedK = `k${result.k}`;
+          const finalCandidates = candidatesByK[selectedK] || [];
+
+          console.log('Using final candidates:', finalCandidates.length);
+
+          setCachedCandidates(finalCandidates);
+          setIsClusteringDone(true);
         }
-
-        // Phase 2: Use adaptive k-means with pre-fetched candidates
-        setLoadingMessage('Optimizing cluster quality...');
-        const result = await adaptiveKMeansWithPrefetch(
-          ratedEmbeddings,
-          candidatesByK,
-          K_RANGE,
-          5,
-          0.65,
-          12
-        );
-
-        console.log(`Adaptive k-means selected k=${result.k}`);
-
-        setCachedCentroids(result.centroids);
-
-        // Phase 3: Get final candidates for selected k
-        setLoadingMessage('Preparing recommendations...');
-        const selectedK = `k${result.k}`;
-        const finalCandidates = candidatesByK[selectedK] || [];
-
-        console.log('Using final candidates:', finalCandidates.length);
-
-        setCachedCandidates(finalCandidates);
-        setIsClusteringDone(true);
       } catch (error) {
         console.error('Error computing clusters:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -191,7 +213,7 @@ export function KMeansRecommendations({
 
   // Effect 2: Compute paginated recommendations when page changes
   useEffect(() => {
-    if (!isClusteringDone || !cachedCentroids || cachedCandidates.length === 0) {
+    if (!isClusteringDone || cachedCandidates.length === 0) {
       return;
     }
 
@@ -201,10 +223,9 @@ export function KMeansRecommendations({
     // Get rated beer IDs for seeding
     const ratedBeerIds = initialRatedBeers.map(beer => beer.beer_id);
 
-    // Use new diverse ranking with candidates that include quality fields
+    // Use diverse ranking with candidates that include quality fields
     const recommendResult = recommendFromCentroids(
-      cachedCentroids,
-      cachedCandidates, // Now includes similarity, cluster_index, bias_term, scraped_review_count
+      cachedCandidates, // Includes similarity, cluster_index, bias_term, scraped_review_count
       userId,
       ratedBeerIds,
       RECS_PER_PAGE,
@@ -216,7 +237,7 @@ export function KMeansRecommendations({
     setHasMore(recommendResult.hasMore);
     setTotalAvailable(recommendResult.totalAvailable);
 
-  }, [currentPage, isClusteringDone, cachedCentroids, cachedCandidates, RECS_PER_PAGE, userId, initialRatedBeers]);
+  }, [currentPage, isClusteringDone, cachedCandidates, RECS_PER_PAGE, userId, initialRatedBeers]);
 
   // Effect 3: Batch fetch saved states and ratings when recommendations change
   useEffect(() => {
