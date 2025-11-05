@@ -35,7 +35,7 @@ export function ProfileBrewerySearch({ onSearch }: ProfileBrewerySearchProps) {
         <div className="flex-1">
           <Input
             type="text"
-            placeholder="Search by brewery name..."
+            placeholder="Search by brewery name, city, or country..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={handleKeyPress}

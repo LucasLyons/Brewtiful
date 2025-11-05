@@ -165,11 +165,14 @@ export function ProfileContent({
   }, [savedBeers, savedBeersSearchQuery])
 
   // Filter breweries based on search query
+  // Search across name, city, and country fields
   const filteredSavedBreweries = useMemo(() => {
     if (!savedBreweriesSearchQuery) return savedBreweries
 
     return savedBreweries.filter(brewery =>
-      brewery.name.toLowerCase().includes(savedBreweriesSearchQuery)
+      brewery.name.toLowerCase().includes(savedBreweriesSearchQuery) ||
+      (brewery.city && brewery.city.toLowerCase().includes(savedBreweriesSearchQuery)) ||
+      (brewery.country && brewery.country.toLowerCase().includes(savedBreweriesSearchQuery))
     )
   }, [savedBreweries, savedBreweriesSearchQuery])
 

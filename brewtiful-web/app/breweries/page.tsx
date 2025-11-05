@@ -54,9 +54,10 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
     .select('*');
 
   // Apply search filter to both queries if present
+  // Search across name, city, and country fields
   if (searchQuery) {
-    countQuery = countQuery.ilike('name', `%${searchQuery}%`);
-    breweriesQuery = breweriesQuery.ilike('name', `%${searchQuery}%`);
+    countQuery = countQuery.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%`);
+    breweriesQuery = breweriesQuery.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%`);
   }
 
   // Apply country filter
@@ -137,8 +138,9 @@ export default async function BreweriesPage({ searchParams }: BreweriesPageProps
     .select('country, city, province_or_state');
 
   // Apply search filter if present
+  // Search across name, city, and country fields
   if (searchQuery) {
-    optionsQuery = optionsQuery.ilike('name', `%${searchQuery}%`);
+    optionsQuery = optionsQuery.or(`name.ilike.%${searchQuery}%,city.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%`);
   }
 
   // Apply country filter
