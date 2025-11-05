@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { fetchRatedBeersPage, fetchSavedBeersPage, fetchSavedBreweriesPage } from '@/app/profile/actions-data'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BeersView } from '@/components/beer/beers-view'
@@ -68,8 +67,6 @@ export function ProfileContent({
   savedBreweryIds: initialSavedBreweryIds,
   userRatings: initialUserRatings,
 }: ProfileContentProps) {
-  const searchParams = useSearchParams()
-
   const [ratedBeers, setRatedBeers] = useState(initialRatedBeers)
   const [savedBeers, setSavedBeers] = useState(initialSavedBeers)
   const [savedBreweries, setSavedBreweries] = useState(initialSavedBreweries)

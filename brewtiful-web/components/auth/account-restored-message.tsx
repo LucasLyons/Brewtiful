@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { CheckCircle2, X } from 'lucide-react'
 
 export function AccountRestoredMessage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [show, setShow] = useState(false)
 
   useEffect(() => {
