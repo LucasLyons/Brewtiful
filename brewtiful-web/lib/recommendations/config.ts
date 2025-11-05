@@ -10,7 +10,7 @@
 export interface RankingParams {
   /**
    * Bias term exponent - controls influence of LightFM bias_term on scoring
-   * Range: 0.1 - 1.0
+   * Range: 0.0 - 1.0
    * Default: 0.1 (dampens bias_term to prevent overpowering similarity)
    * Higher = more quality-focused, Lower = more similarity-focused
    */
@@ -57,8 +57,8 @@ export interface RankingParams {
  */
 export const RANKING_PARAMS: RankingParams = {
   alpha: parseFloat(process.env.NEXT_PUBLIC_BIAS_ALPHA ?? '0.1'),
-  lambda: parseFloat(process.env.NEXT_PUBLIC_CLUSTER_DECAY_LAMBDA ?? '0.2'),
-  beta: parseFloat(process.env.NEXT_PUBLIC_DIVERSITY_BETA ?? '0.5'),
+  lambda: parseFloat(process.env.NEXT_PUBLIC_CLUSTER_DECAY_LAMBDA ?? '0.1'),
+  beta: parseFloat(process.env.NEXT_PUBLIC_DIVERSITY_BETA ?? '0.2'),
   threshold: parseFloat(process.env.NEXT_PUBLIC_SIMILARITY_THRESHOLD ?? '0.65'),
   topK: parseInt(process.env.NEXT_PUBLIC_CLUSTER_TOP_K ?? '5', 10),
 };
@@ -67,8 +67,8 @@ export const RANKING_PARAMS: RankingParams = {
  * Validate ranking parameters are within acceptable ranges
  */
 export function validateRankingParams(params: RankingParams): void {
-  if (params.alpha < 0.1 || params.alpha > 1.0) {
-    throw new Error(`alpha must be between 0.1 and 1.0, got ${params.alpha}`);
+  if (params.alpha < 0.0 || params.alpha > 1.0) {
+    throw new Error(`alpha must be between 0.0 and 1.0, got ${params.alpha}`);
   }
   if (params.lambda < 0.1 || params.lambda > 0.5) {
     throw new Error(`lambda must be between 0.1 and 0.5, got ${params.lambda}`);
