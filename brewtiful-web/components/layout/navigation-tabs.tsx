@@ -31,7 +31,7 @@ export function NavigationTabs() {
   ];
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 sm:gap-1">
       {tabs.map((tab) => {
         const isActive = pathname === tab.href ||
           (tab.href !== "/" && pathname.startsWith(tab.href));
@@ -42,7 +42,7 @@ export function NavigationTabs() {
             key={tab.name}
             href={tab.href}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium
+              flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium
               transition-all duration-200
               ${
                 isActive
@@ -51,8 +51,8 @@ export function NavigationTabs() {
               }
             `}
           >
-            <Icon className="h-4 w-4" />
-            <span>{tab.name}</span>
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="hidden xs:inline sm:inline">{tab.name}</span>
           </Link>
         );
       })}

@@ -51,8 +51,8 @@ export function BreweriesPageLayout({
         onToggle={handleToggleSidebar}
       />
       <div
-        className={`py-8 transition-all duration-300 ${
-          isSidebarOpen ? "pl-72 pr-4" : "px-4"
+        className={`py-4 sm:py-6 lg:py-8 px-3 sm:px-4 transition-all duration-300 ${
+          isSidebarOpen ? "lg:pl-72 lg:pr-4" : ""
         }`}
       >
         <div className="container mx-auto">{children}</div>

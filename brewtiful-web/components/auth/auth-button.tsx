@@ -12,12 +12,12 @@ export async function AuthButton() {
   const user = data?.claims;
 
   return user && !user.is_anonymous ? (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Hey, {user.email}!</span>
+    <div className="flex items-center gap-1 sm:gap-2">
+      <span className="hidden md:inline text-sm text-muted-foreground">Hey, {user.email}!</span>
       <Button variant="ghost" size="sm" asChild>
-        <Link href="/profile" className="flex items-center gap-2">
+        <Link href="/profile" className="flex items-center gap-1 sm:gap-2">
           <User className="h-4 w-4" />
-          Profile
+          <span className="hidden sm:inline">Profile</span>
         </Link>
       </Button>
       <LogoutButton />

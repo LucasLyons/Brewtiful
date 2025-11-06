@@ -68,80 +68,97 @@ export function BreweriesPagination({ currentPage, totalPages }: BreweriesPagina
   }
 
   return (
-    <div className="mt-8 flex items-center justify-center gap-2">
-      {/* First page */}
-      <Button
-        variant="outline"
-        size="icon"
-        asChild
-        disabled={currentPage === 1}
-      >
-        <Link href={createPageURL(1)} aria-label="First page">
-          <ChevronsLeft className="h-4 w-4" />
-        </Link>
-      </Button>
-
-      {/* Previous page */}
-      <Button
-        variant="outline"
-        size="icon"
-        asChild
-        disabled={currentPage === 1}
-      >
-        <Link href={createPageURL(currentPage - 1)} aria-label="Previous page">
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-      </Button>
-
-      {/* Page numbers */}
-      <div className="flex items-center gap-1">
-        {getPageNumbers().map((page, index) => {
-          if (page === '...') {
-            return (
-              <span key={`ellipsis-${index}`} className="px-2">
-                ...
-              </span>
-            );
-          }
-
-          return (
-            <Button
-              key={page}
-              variant={currentPage === page ? 'default' : 'outline'}
-              size="icon"
-              asChild
-            >
-              <Link href={createPageURL(page as number)}>
-                {page}
-              </Link>
-            </Button>
-          );
-        })}
+    <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2">
+      {/* Mobile: Current page indicator */}
+      <div className="sm:hidden text-sm text-muted-foreground">
+        Page {currentPage} of {totalPages}
       </div>
 
-      {/* Next page */}
-      <Button
-        variant="outline"
-        size="icon"
-        asChild
-        disabled={currentPage === totalPages}
-      >
-        <Link href={createPageURL(currentPage + 1)} aria-label="Next page">
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </Button>
+      {/* Navigation buttons */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* First page - Hidden on mobile */}
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          disabled={currentPage === 1}
+          className="hidden sm:inline-flex h-9 w-9"
+        >
+          <Link href={createPageURL(1)} aria-label="First page">
+            <ChevronsLeft className="h-4 w-4" />
+          </Link>
+        </Button>
 
-      {/* Last page */}
-      <Button
-        variant="outline"
-        size="icon"
-        asChild
-        disabled={currentPage === totalPages}
-      >
-        <Link href={createPageURL(totalPages)} aria-label="Last page">
-          <ChevronsRight className="h-4 w-4" />
-        </Link>
-      </Button>
+        {/* Previous page */}
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          disabled={currentPage === 1}
+          className="h-10 w-10 sm:h-9 sm:w-9"
+        >
+          <Link href={createPageURL(currentPage - 1)} aria-label="Previous page">
+            <ChevronLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+
+        {/* Page numbers - Fewer on mobile */}
+        <div className="flex items-center gap-1">
+          {getPageNumbers().map((page, index) => {
+            if (page === '...') {
+              return (
+                <span key={`ellipsis-${index}`} className="px-1 sm:px-2 text-sm">
+                  ...
+                </span>
+              );
+            }
+
+            // On mobile, only show current page and adjacent pages
+            const isMobileVisible = page === 1 || page === totalPages ||
+                                   Math.abs((page as number) - currentPage) <= 1;
+
+            return (
+              <Button
+                key={page}
+                variant={currentPage === page ? 'default' : 'outline'}
+                size="icon"
+                asChild
+                className={`h-10 w-10 sm:h-9 sm:w-9 ${!isMobileVisible ? 'hidden sm:inline-flex' : ''}`}
+              >
+                <Link href={createPageURL(page as number)}>
+                  {page}
+                </Link>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Next page */}
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          disabled={currentPage === totalPages}
+          className="h-10 w-10 sm:h-9 sm:w-9"
+        >
+          <Link href={createPageURL(currentPage + 1)} aria-label="Next page">
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </Button>
+
+        {/* Last page - Hidden on mobile */}
+        <Button
+          variant="outline"
+          size="icon"
+          asChild
+          disabled={currentPage === totalPages}
+          className="hidden sm:inline-flex h-9 w-9"
+        >
+          <Link href={createPageURL(totalPages)} aria-label="Last page">
+            <ChevronsRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -22,16 +22,16 @@ export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
         variant={currentView === "grid" ? "secondary" : "ghost"}
         size="sm"
         onClick={() => handleViewChange("grid")}
-        className="gap-2"
+        className="gap-1 sm:gap-2"
       >
         <LayoutGrid className="h-4 w-4" />
-        Grid
+        <span className="hidden xs:inline">Grid</span>
       </Button>
       <Button
         variant={currentView === "table" ? "secondary" : "ghost"}
         size="sm"
         onClick={() => handleViewChange("table")}
-        className="gap-2"
+        className="hidden md:flex gap-2"
       >
         <List className="h-4 w-4" />
         Table

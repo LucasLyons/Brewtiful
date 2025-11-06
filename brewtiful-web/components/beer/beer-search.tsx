@@ -42,7 +42,7 @@ export function BeerSearch() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="flex-1">
           <Input
             type="text"
@@ -50,22 +50,22 @@ export function BeerSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full"
+            className="w-full h-10"
           />
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSearch} className="flex items-center gap-2">
+          <Button onClick={handleSearch} className="flex-1 sm:flex-initial items-center gap-2 h-10">
             <Search className="h-4 w-4" />
-            Search
+            <span className="sm:inline">Search</span>
           </Button>
           {hasActiveFilter && (
             <Button
               onClick={handleClear}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex-1 sm:flex-initial items-center gap-2 h-10"
             >
               <X className="h-4 w-4" />
-              Clear
+              <span className="sm:inline">Clear</span>
             </Button>
           )}
         </div>

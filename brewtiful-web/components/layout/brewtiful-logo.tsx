@@ -15,7 +15,7 @@ export default function BrewtifulLogo() {
   return (
     <Link href="/">
         <div
-        className={`${geistSans.className} flex flex-row items-center leading-none text-[44px]`}
+        className={`${geistSans.className} flex flex-row items-center leading-none text-[28px] sm:text-[36px] md:text-[44px]`}
         >
             <Image
             src="/transparent.svg"
@@ -31,9 +31,9 @@ export default function BrewtifulLogo() {
             alt="Brewtiful Logo"
             className="h-[1.5em] mt-1 w-auto hidden dark:block"
             />
-            <p>Brewtiful</p>
+            <p className="hidden xs:block">Brewtiful</p>
         </div>
     </Link>
-    
+
   );
 }

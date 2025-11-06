@@ -40,10 +40,27 @@ export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onB
   // Load saved preference after mount to avoid hydration mismatch
   useEffect(() => {
     const savedView = localStorage.getItem("beerViewMode") as ViewMode | null;
-    if (savedView === "grid" || savedView === "table") {
+
+    // Check if we're on mobile/tablet (< 768px = md breakpoint)
+    const isMobile = window.innerWidth < 768;
+
+    // Force grid view on mobile, otherwise use saved preference
+    if (isMobile) {
+      setViewMode("grid");
+    } else if (savedView === "grid" || savedView === "table") {
       setViewMode(savedView);
     }
     setIsLoading(false);
+
+    // Handle window resize to force grid view on mobile
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode("grid");
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   if (isLoading) {
@@ -74,7 +91,7 @@ export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onB
   return (
     <>
       {/* Header Section with Search and View Toggle */}
-      <div className="mb-8 flex items-center gap-4">
+      <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
         {!hideSearch && (
           <div className="flex-1">
             <BeerSearch />
@@ -85,14 +102,14 @@ export function BeersView({ beers, paginationTop, savedBeerIds, userRatings, onB
 
       {/* Pagination (Top) */}
       {paginationTop && (
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           {paginationTop}
         </div>
       )}
 
       {/* Conditional Rendering Based on View Mode */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {beers.map((beer) => (
             <BeerCard
               key={beer.beer_id}

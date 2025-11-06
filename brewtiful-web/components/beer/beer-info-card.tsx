@@ -134,14 +134,14 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-3xl flex-1">
-            <Beer className="h-8 w-8" />
-            {beer.name}
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl md:text-3xl flex-1 leading-tight">
+            <Beer className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 shrink-0" />
+            <span className="break-words">{beer.name}</span>
           </CardTitle>
         </div>
-        <div className="pt-4 flex flex-col gap-2">
+        <div className="pt-3 sm:pt-4 flex flex-col gap-2">
           <StarRating
             initialRating={rating}
             onRate={handleRate}
@@ -150,7 +150,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
             onDisabledClick={handleDisabledClick}
           />
           {!user && showError && (
-            <p className="text-sm text-red-600 dark:text-red-500">
+            <p className="text-xs sm:text-sm text-red-600 dark:text-red-500">
               Please log in to rate
             </p>
           )}
@@ -164,7 +164,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
           )}
         </div>
         {/* Flag Buttons */}
-        <div className="pt-4">
+        <div className="pt-3 sm:pt-4">
           <FlagButtons
             beerId={beer.beer_id}
             initialFlagActive={beer.flag_active || 0}
@@ -174,7 +174,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
           />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 sm:p-6">
         {/* Description */}
         {beer.description && (
           <div className="text-muted-foreground">
@@ -188,7 +188,7 @@ export function BeerInfoCard({ beer }: BeerInfoCardProps) {
         )}
 
         {/* Key Facts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-4">
           {/* Brewery */}
           {brewery && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">

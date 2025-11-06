@@ -116,7 +116,8 @@ export function BreweryListItem({
 }: BreweryListItemProps) {
   return (
     <TooltipProvider delayDuration={1000}>
-      <div className="grid grid-cols-13 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+      {/* Desktop view (grid) */}
+      <div className="hidden lg:grid grid-cols-13 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b last:border-b-0">
         {/* Name */}
         <div className="col-span-3 flex items-center min-w-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -178,6 +179,52 @@ export function BreweryListItem({
             onSaved={onSaved}
             onUnsaved={onUnsaved}
           />
+        </div>
+      </div>
+
+      {/* Mobile view (stacked card) */}
+      <div className="lg:hidden p-4 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
+            <Building2 className="h-5 w-5 shrink-0 text-muted-foreground mt-0.5" />
+            <Link
+              href={`/breweries/${breweryId}`}
+              className="font-medium text-base hover:text-primary hover:underline transition-colors line-clamp-2"
+            >
+              {name}
+            </Link>
+          </div>
+          <SaveBreweryButton
+            breweryId={parseInt(breweryId)}
+            initialIsSaved={isSaved}
+            onSaved={onSaved}
+            onUnsaved={onUnsaved}
+          />
+        </div>
+
+        <div className="space-y-1 text-sm text-muted-foreground pl-7">
+          {country && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {city && <TruncatedClickableFilter value={city} filterType="city" basePath="/breweries" className="line-clamp-1" />}
+                {city && provinceOrState && <span>, </span>}
+                {provinceOrState && <span>{provinceOrState}</span>}
+                {(city || provinceOrState) && <span>, </span>}
+                <TruncatedClickableFilter value={country} filterType="country" basePath="/breweries" className="line-clamp-1" />
+              </span>
+            </div>
+          )}
+          {!country && (city || provinceOrState) && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {city && <TruncatedClickableFilter value={city} filterType="city" basePath="/breweries" className="line-clamp-1" />}
+                {city && provinceOrState && <span>, </span>}
+                {provinceOrState && <span>{provinceOrState}</span>}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </TooltipProvider>

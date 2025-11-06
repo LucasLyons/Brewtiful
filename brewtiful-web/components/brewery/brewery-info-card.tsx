@@ -24,25 +24,25 @@ interface BreweryInfoCardProps {
 export function BreweryInfoCard({ brewery, isSaved }: BreweryInfoCardProps) {
   return (
     <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-3xl">
-            <Building2 className="h-8 w-8" />
-            {brewery.name}
-            <SaveBreweryButton breweryId={parseInt(brewery.brewery_id)} initialIsSaved={isSaved} />
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl md:text-3xl flex-1 leading-tight">
+            <Building2 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 shrink-0" />
+            <span className="break-words">{brewery.name}</span>
           </CardTitle>
+          <SaveBreweryButton breweryId={parseInt(brewery.brewery_id)} initialIsSaved={isSaved} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 sm:p-6">
         {/* Description */}
         {brewery.description && (
-          <div className="text-muted-foreground">
+          <div className="text-sm sm:text-base text-muted-foreground">
             {brewery.description}
           </div>
         )}
 
         {/* Key Facts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-4">
           {/* Location */}
           {(brewery.country || brewery.province_or_state || brewery.city) && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">

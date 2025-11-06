@@ -219,9 +219,9 @@ export function BeerCard({
   return (
     <TooltipProvider delayDuration={1000}>
       <Card className="flex flex-col h-full hover:shadow-lg dark:hover:bg-white/5 transition-all">
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-xl flex-1 min-w-0 line-clamp-2">
+            <CardTitle className="text-lg sm:text-xl flex-1 min-w-0 line-clamp-2">
               <Link
                 href={`/beers/${beerId}`}
                 className="hover:text-primary hover:underline transition-colors"
@@ -229,7 +229,7 @@ export function BeerCard({
                 {name}
               </Link>
             </CardTitle>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <SaveBeerButton
                 beerId={parseInt(beerId)}
                 breweryId={breweryId}
@@ -237,18 +237,18 @@ export function BeerCard({
                 onSaved={onSaved}
                 onUnsaved={onUnsaved}
               />
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-xs">
                 {abv}%
               </Badge>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-help">
                     {active === 'Active' ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-500" />
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-500" />
                     ) : active === 'Inactive' ? (
-                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+                      <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-500" />
                     ) : (
-                      <HelpCircle className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                      <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
                     )}
                   </div>
                 </TooltipTrigger>
@@ -290,9 +290,9 @@ export function BeerCard({
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1">
+        <CardContent className="flex-1 p-4 sm:p-6">
           <div className="space-y-3">
-            <Badge variant="outline" className="truncate max-w-full hover:bg-primary/10 transition-colors">
+            <Badge variant="outline" className="truncate max-w-full hover:bg-primary/10 transition-colors text-xs sm:text-sm">
               <ClickableFilter
                 value={style}
                 filterType="style"
@@ -310,7 +310,7 @@ export function BeerCard({
                 onDisabledClick={handleDisabledClick}
               />
               {!user && showError && (
-                <p className="text-sm text-red-600 dark:text-red-500">
+                <p className="text-xs sm:text-sm text-red-600 dark:text-red-500">
                   Please log in to rate
                 </p>
               )}
@@ -328,7 +328,7 @@ export function BeerCard({
           </div>
         </CardContent>
 
-        <CardFooter>
+        <CardFooter className="p-4 sm:p-6">
           <button className="w-full text-sm font-medium hover:underline">
             View Details →
           </button>

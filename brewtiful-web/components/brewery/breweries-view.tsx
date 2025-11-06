@@ -25,20 +25,20 @@ export function BreweriesView({ breweries, paginationTop, savedBreweryIds, onBre
     <>
       {/* Header Section with Search */}
       {!hideSearch && (
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <BrewerySearch />
         </div>
       )}
 
       {/* Pagination (Top) */}
       {paginationTop && (
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           {paginationTop}
         </div>
       )}
 
-      {/* List Header */}
-      <div className="grid grid-cols-13 gap-4 px-4 py-3 bg-muted/50 border-b font-semibold text-sm">
+      {/* List Header - Hidden on mobile */}
+      <div className="hidden lg:grid grid-cols-13 gap-4 px-4 py-3 bg-muted/50 border-b font-semibold text-sm">
         <div className="col-span-3">Name</div>
         <div className="col-span-3">Country</div>
         <div className="col-span-3">Province/State</div>

@@ -43,15 +43,15 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
             <div className="min-h-screen w-full flex flex-col items-center">
-              <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-                <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
-                  <div className="flex gap-6 items-center">
+              <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+                <div className="w-full max-w-7xl flex justify-between items-center p-2 sm:p-3 px-3 sm:px-5 text-sm">
+                  <div className="flex gap-2 sm:gap-6 items-center">
                     <div className="font-semibold">
                       {<BrewtifulLogo />}
                     </div>
                     <NavigationTabs />
                   </div>
-                  <div className="flex gap-4 items-center">
+                  <div className="flex gap-2 sm:gap-4 items-center">
                     {<AuthButton />}
                     <ThemeSwitcher/>
                   </div>
@@ -61,8 +61,8 @@ export default async function RootLayout({
                 <AccountRestoredMessage />
                 {children}
               </main>
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-4">
-                <p>
+              <footer className="w-full flex flex-col sm:flex-row items-center justify-center border-t mx-auto text-center text-xs gap-2 sm:gap-8 py-4 px-4">
+                <p className="order-2 sm:order-1">
                   Powered by{" "}
                   <a
                     href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
@@ -73,18 +73,20 @@ export default async function RootLayout({
                     Supabase
                   </a>
                 </p>
-                <a
-                  href="/about"
-                  className="hover:underline"
-                >
-                  About
-                </a>
-                <a
-                  href="/privacy"
-                  className="hover:underline"
-                >
-                  Privacy Policy
-                </a>
+                <div className="flex gap-4 order-1 sm:order-2">
+                  <a
+                    href="/about"
+                    className="hover:underline"
+                  >
+                    About
+                  </a>
+                  <a
+                    href="/privacy"
+                    className="hover:underline"
+                  >
+                    Privacy Policy
+                  </a>
+                </div>
               </footer>
             </div>
             <Analytics />
