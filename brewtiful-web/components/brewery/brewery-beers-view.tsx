@@ -34,7 +34,7 @@ export function BreweryBeersView({ beers, availableStyles }: BreweryBeersViewPro
         onToggle={() => setIsFilterOpen(!isFilterOpen)}
       />
 
-      <div className={`transition-all duration-300 ${isFilterOpen ? 'ml-64' : 'ml-0'}`}>
+      <div className={`transition-all duration-300`}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {beers.map((beer) => (
             <BeerCard
