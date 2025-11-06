@@ -74,6 +74,12 @@ export default async function RootLayout({
                   </a>
                 </p>
                 <a
+                  href="/about"
+                  className="hover:underline"
+                >
+                  About
+                </a>
+                <a
                   href="/privacy"
                   className="hover:underline"
                 >
