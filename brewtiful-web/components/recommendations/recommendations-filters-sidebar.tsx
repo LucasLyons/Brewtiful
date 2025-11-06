@@ -206,32 +206,32 @@ export function RecommendationsFiltersSidebar({
       <Button
         onClick={onToggle}
         variant="outline"
-        className={`fixed top-1/2 -translate-y-1/2 z-20 transition-all duration-300 h-24 px-2 rounded-r-lg rounded-l-none flex flex-col items-center justify-center gap-1 ${
-          isOpen ? "left-64" : "left-0"
+        className={`fixed top-20 lg:top-1/2 lg:-translate-y-1/2 z-50 transition-all duration-300 h-12 w-12 lg:h-24 lg:w-auto lg:px-2 rounded-lg lg:rounded-r-lg lg:rounded-l-none flex flex-col items-center justify-center gap-1 ${
+          isOpen ? "left-[calc(85vw-3.5rem)] sm:left-[calc(20rem-3.5rem)] lg:left-64" : "left-2 lg:left-0"
         }`}
         aria-label={isOpen ? "Hide filters" : "Show filters"}
       >
         {isOpen ? (
           <>
-            <ChevronLeft className="h-4 w-4" />
-            <span className="text-xs [writing-mode:vertical-lr]">Hide</span>
+            <ChevronLeft className="h-5 w-5 lg:h-4 lg:w-4" />
+            <span className="hidden lg:block text-xs [writing-mode:vertical-lr]">Hide</span>
           </>
         ) : (
           <>
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="text-xs [writing-mode:vertical-lr]">Filters</span>
+            <SlidersHorizontal className="h-5 w-5 lg:h-4 lg:w-4" />
+            <span className="hidden lg:block text-xs [writing-mode:vertical-lr]">Filters</span>
           </>
         )}
       </Button>
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 border-r bg-card p-6 space-y-6 transition-transform duration-300 overflow-y-auto z-10 ${
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-[85vw] sm:w-80 lg:w-64 border-r bg-card p-4 sm:p-6 space-y-4 sm:space-y-6 transition-transform duration-300 overflow-y-auto z-40 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div>
-          <h2 className="text-lg font-semibold mb-4">Filters</h2>
+          <h2 className="text-lg font-semibold mb-4">Sort & Filter</h2>
           <p className="text-xs text-muted-foreground">
             Filter your personalized recommendations
           </p>
