@@ -38,11 +38,23 @@ export function KMeansRecommendations({
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
-  // Get filter params from URL
-  const filterBreweries = searchParams.get('breweries')?.split(',').filter(Boolean) || [];
-  const filterStyles = searchParams.get('styles')?.split(',').filter(Boolean) || [];
-  const filterLocations = searchParams.get('locations')?.split(',').filter(Boolean) || [];
-  const filterCities = searchParams.get('cities')?.split(',').filter(Boolean) || [];
+  // Get filter params from URL - memoize to prevent unnecessary re-renders
+  const filterBreweries = useMemo(
+    () => searchParams.get('breweries')?.split(',').filter(Boolean) || [],
+    [searchParams]
+  );
+  const filterStyles = useMemo(
+    () => searchParams.get('styles')?.split(',').filter(Boolean) || [],
+    [searchParams]
+  );
+  const filterLocations = useMemo(
+    () => searchParams.get('locations')?.split(',').filter(Boolean) || [],
+    [searchParams]
+  );
+  const filterCities = useMemo(
+    () => searchParams.get('cities')?.split(',').filter(Boolean) || [],
+    [searchParams]
+  );
   const abvMin = searchParams.get('abvMin') ? parseFloat(searchParams.get('abvMin')!) : undefined;
   const abvMax = searchParams.get('abvMax') ? parseFloat(searchParams.get('abvMax')!) : undefined;
   const includeInactive = searchParams.get('includeInactive') === 'true';
@@ -91,7 +103,7 @@ export function KMeansRecommendations({
     return Array.from(
       new Set(filtered.map((b) => b.brewery_name).filter(Boolean))
     ).sort() as string[];
-  }, [cachedCandidates, filterStyles.join(','), filterLocations.join(','), filterCities.join(','), abvMin, abvMax]);
+  }, [cachedCandidates, filterStyles, filterLocations, filterCities, abvMin, abvMax]);
 
   const availableStyles = useMemo(() => {
     // Apply all filters EXCEPT style filter
@@ -116,7 +128,7 @@ export function KMeansRecommendations({
     return Array.from(
       new Set(filtered.map((b) => b.style).filter(Boolean))
     ).sort() as string[];
-  }, [cachedCandidates, filterBreweries.join(','), filterLocations.join(','), filterCities.join(','), abvMin, abvMax]);
+  }, [cachedCandidates, filterBreweries, filterLocations, filterCities, abvMin, abvMax]);
 
   const availableLocations = useMemo(() => {
     // Apply all filters EXCEPT location filter
@@ -141,7 +153,7 @@ export function KMeansRecommendations({
     return Array.from(
       new Set(filtered.map((b) => b.brewery_country).filter(Boolean))
     ).sort() as string[];
-  }, [cachedCandidates, filterBreweries.join(','), filterStyles.join(','), filterCities.join(','), abvMin, abvMax]);
+  }, [cachedCandidates, filterBreweries, filterStyles, filterCities, abvMin, abvMax]);
 
   const availableCities = useMemo(() => {
     // Apply all filters EXCEPT city filter
@@ -166,7 +178,7 @@ export function KMeansRecommendations({
     return Array.from(
       new Set(filtered.map((b) => b.brewery_city).filter(Boolean))
     ).sort() as string[];
-  }, [cachedCandidates, filterBreweries.join(','), filterStyles.join(','), filterLocations.join(','), abvMin, abvMax]);
+  }, [cachedCandidates, filterBreweries, filterStyles, filterLocations, abvMin, abvMax]);
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -313,7 +325,7 @@ export function KMeansRecommendations({
             BEERS_PER_CENTROID
           );
 
-          // Phase 2: Use adaptive k-means with pre-fetched candidates
+          // Phase 2: Use adaptive k-means with pre-fetched candidates and centroids
           setLoadingMessage('Optimizing cluster quality...');
           const result = await adaptiveKMeansWithPrefetch(
             ratedEmbeddings,
@@ -321,7 +333,8 @@ export function KMeansRecommendations({
             K_RANGE,
             5,
             0.5,
-            12
+            12,
+            centroidsByK // Pass pre-computed centroids to avoid re-computing
           );
 
           console.log(`Adaptive k-means selected k=${result.k}`);
@@ -429,10 +442,10 @@ export function KMeansRecommendations({
     cachedCandidates,
     userId,
     initialRatedBeers,
-    filterBreweries.join(','),
-    filterStyles.join(','),
-    filterLocations.join(','),
-    filterCities.join(','),
+    filterBreweries,
+    filterStyles,
+    filterLocations,
+    filterCities,
     abvMin,
     abvMax,
     includeInactive,

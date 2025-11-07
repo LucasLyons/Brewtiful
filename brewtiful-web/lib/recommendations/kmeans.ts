@@ -271,58 +271,7 @@ export function weightedKMeans(
  * @param seed - Optional seed for deterministic selection (generated from beer IDs if not provided)
  * @returns Array of k diverse beer embeddings
  */
-export function selectDiverseSeeds(
-  beers: BeerEmbedding[],
-  k: number = 5,
-  seed?: number
-): BeerEmbedding[] {
-  if (beers.length === 0) {
-    throw new Error('No beers provided for seed selection');
-  }
 
-  if (k > beers.length) {
-    // If k is greater than available beers, return all beers
-    return [...beers];
-  }
-
-  // Generate seed from beer IDs if not provided
-  const actualSeed = seed ?? generateSeedFromBeerIds(beers.map((b) => b.beer_id));
-  const rng = new SeededRandom(actualSeed);
-
-  const seeds: BeerEmbedding[] = [];
-
-  // Choose first seed randomly (but deterministically)
-  const firstIdx = rng.nextInt(beers.length);
-  seeds.push(beers[firstIdx]);
-
-  // Choose remaining seeds using k-means++ approach
-  for (let i = 1; i < k; i++) {
-    const distances = beers.map((beer) => {
-      let minDist = Infinity;
-      for (const seed of seeds) {
-        const similarity = cosineSimilarity(beer.embedding, seed.embedding);
-        const dist = 1 - similarity; // Convert similarity to distance
-        minDist = Math.min(minDist, dist);
-      }
-      return minDist;
-    });
-
-    // Choose next seed with probability proportional to distance squared
-    const distancesSquared = distances.map((d) => d * d);
-    const totalDist = distancesSquared.reduce((sum, d) => sum + d, 0);
-    let random = rng.next() * totalDist;
-
-    for (let j = 0; j < beers.length; j++) {
-      random -= distancesSquared[j];
-      if (random <= 0) {
-        seeds.push(beers[j]);
-        break;
-      }
-    }
-  }
-
-  return seeds;
-}
 
 /**
  * Find the k most similar embeddings to a target embedding
@@ -485,6 +434,7 @@ export async function evaluateClusterQuality(
  * @param minItemsPerCluster - Minimum items per cluster (default 5)
  * @param similarityThreshold - Similarity threshold for cluster membership (default 0.7)
  * @param minTotalRecommendations - Minimum total recommendations to return (default 12)
+ * @param centroidsByK - Optional pre-computed centroids for each k value (e.g. { k1: [[...]], k2: [[...]], ... })
  * @returns ClusterResult with the best k value
  */
 export async function adaptiveKMeansWithPrefetch(
@@ -493,7 +443,8 @@ export async function adaptiveKMeansWithPrefetch(
   kRange: number[] = [1, 2, 3, 4, 5],
   minItemsPerCluster: number = 5,
   similarityThreshold: number = 0.7,
-  minTotalRecommendations: number = 12
+  minTotalRecommendations: number = 12,
+  centroidsByK?: Record<string, number[][]>
 ): Promise<ClusterResult & { k: number; clusterSizes: number[] }> {
   console.log('Starting adaptive k-means selection with pre-fetched candidates...');
 
@@ -508,8 +459,23 @@ export async function adaptiveKMeansWithPrefetch(
 
     console.log(`Trying k=${k}...`);
 
-    // Run k-means clustering
-    const result = weightedKMeans(beers, k);
+    // Use pre-computed centroids if available, otherwise compute them
+    let result: ClusterResult;
+    const centroidKey = `k${k}`;
+
+    if (centroidsByK && centroidsByK[centroidKey]) {
+      console.log(`Using pre-computed centroids for k=${k}`);
+      // Use pre-computed centroids and assign beers to nearest centroids
+      const centroids = centroidsByK[centroidKey];
+      const assignments = beers.map((beer) =>
+        findNearestCentroid(beer.embedding, centroids)
+      );
+      result = { centroids, assignments };
+    } else {
+      console.log(`Computing centroids for k=${k}`);
+      // Run k-means clustering
+      result = weightedKMeans(beers, k);
+    }
 
     // Get pre-fetched candidates for this k
     const candidateKey = `k${k}`;
@@ -575,7 +541,20 @@ export async function adaptiveKMeansWithPrefetch(
 
   // Fallback to k=1 if nothing works
   console.log('No valid k found, falling back to k=1');
-  const fallbackResult = weightedKMeans(beers, 1);
+
+  // Use pre-computed centroids for k=1 if available, otherwise compute
+  let fallbackResult: ClusterResult;
+  if (centroidsByK && centroidsByK['k1']) {
+    console.log('Using pre-computed centroids for k=1 fallback');
+    const centroids = centroidsByK['k1'];
+    const assignments = beers.map((beer) =>
+      findNearestCentroid(beer.embedding, centroids)
+    );
+    fallbackResult = { centroids, assignments };
+  } else {
+    console.log('Computing centroids for k=1 fallback');
+    fallbackResult = weightedKMeans(beers, 1);
+  }
 
   // Use pre-fetched candidates for k=1 if available
   const k1Candidates = candidatesByK['k1'];
