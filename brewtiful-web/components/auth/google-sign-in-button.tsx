@@ -7,11 +7,9 @@ export function GoogleSignInButton() {
   const handleGoogleSignIn = async () => {
     const supabase = createClient();
 
-    // Determine the correct redirect URL based on environment
-    const isLocalhost = window.location.hostname === "localhost";
-    const redirectTo = isLocalhost
-      ? `${window.location.origin}/auth/callback`
-      : 'https://brewtiful.vercel.app/auth/callback';
+    // Use the site URL from environment variable, fallback to current origin for localhost
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const redirectTo = `${siteUrl}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
