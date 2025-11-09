@@ -1,6 +1,6 @@
 # What is Brewtiful?
 
-**[Brewtiful]((https://brewtiful.vercel.app/))** is a beer discovery platform that helps users find new beers they'll love. With a catalog of over 60000+ beers from 6000+ breweries, the platform uses vector embeddings and machine learning to power recommendations help users find relevant items.
+**[Brewtiful]((https://brewtifulapp.com/))** is a beer discovery platform that helps users find new beers they'll love. With a catalog of over 60000+ beers from 6000+ breweries, the platform uses vector embeddings and machine learning to power recommendations help users find relevant items.
 
 ## The Tech Stack
 

@@ -18,8 +18,8 @@ export default function PrivacyPage() {
           <ul>
             <li>
               Visit our website at{' '}
-              <a href="https://brewtiful.vercel.app" className="text-primary hover:underline">
-                brewtiful.vercel.app
+              <a href="https://brewtifulapp.com" className="text-primary hover:underline">
+                brewtifulapp.com
               </a>{' '}
               or any website of ours that links to this Privacy Notice
             </li>

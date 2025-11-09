@@ -32,21 +32,9 @@ export async function GET(request: NextRequest) {
         }
       }
       // Determine the correct redirect URL based on environment
-      const isLocalhost = request.headers.get("host")?.includes("localhost");
-
-      let redirectUrl: string;
-
-      if (isLocalhost) {
-        // Local development
-        const protocol = request.headers.get("x-forwarded-proto") || "http";
-        const host = request.headers.get("host");
-        const baseUrl = `${protocol}://${host}${next}`;
-        redirectUrl = wasRestored ? `${baseUrl}${next.includes('?') ? '&' : '?'}restored=true` : baseUrl;
-      } else {
-        // Production
-        const baseUrl = `https://brewtiful.vercel.app${next}`;
-        redirectUrl = wasRestored ? `${baseUrl}${next.includes('?') ? '&' : '?'}restored=true` : baseUrl;
-      }
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${request.headers.get("x-forwarded-proto") || "https"}://${request.headers.get("host")}`;
+      const baseUrl = `${siteUrl}${next}`;
+      const redirectUrl = wasRestored ? `${baseUrl}${next.includes('?') ? '&' : '?'}restored=true` : baseUrl;
 
       return NextResponse.redirect(redirectUrl);
     }
