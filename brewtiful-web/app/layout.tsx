@@ -87,6 +87,17 @@ export default async function RootLayout({
                     Privacy Policy
                   </a>
                 </div>
+                <p className="order-3">
+                  Made with &lt;3 by{" "}
+                  <a
+                    href="https://lucaslyons.github.io/"
+                    target="_blank"
+                    className="hover:underline"
+                    rel="noreferrer"
+                  >
+                    Lucas Lyons
+                  </a>
+                </p>
               </footer>
             </div>
             <Analytics />

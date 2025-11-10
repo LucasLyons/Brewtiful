@@ -24,16 +24,16 @@ The glaring difference is that production dataset is much more sparse. The table
 |**Popularity Baseline p@50**|0.0724|0.0437|
 |**LightFM p@50**|0.174|0.10508273|
 |**MRR**|0.467|0.300|
-|**Item Coverage@100**|~33%|~30%|
+|**Item Coverage@100**|~33%|~60%|
 
 It's easy to see that there are more users and many fewer items in the Kaggle dataset, leading to an interaction matrix which is roughly twice as dense as the production data. Predictably, this led to consistently worse offline metrics during model training in prod. The model trained on the Kaggle data learned a more robust signal compared to the production model.
 
-Otherwise, the two datasets are very similar in terms of ratings distributions (positive skew) and user rating patterns (some very popular items, many long tail items/some power users, many less active users). However, the production dataset has many more items so the model is capable of recommending a wide variety of items.
+Otherwise, the two datasets are very similar in terms of ratings distributions (positive skew) and user rating patterns (some very popular items, many long tail items/some power users, many less active users). However, the production dataset has many more items so the model is capable of recommending a wide variety of items, and the production model's item coverage is much higher.
 
 ## A Concluding Remark
 It's extremely worth pointing out that my production recommendation system does not use pure LightFM to serve recommendations and the offline metrics are therefore of extremely limited use. A proper evaluation of both models would mirror the production recommendation system (using k-means), but I was not prepared to implement evaluation for this model as regretfully,
 
-- I only learned that the k-means model was necessary after trainign the models, and
+- I only learned that the k-means model was necessary after training the models, and
 - it would be too labour-intensive to go back and do it now!
 
 However, it would be highly interesting to implement proper offline evaluation for the production model to see how it would perform. An interesting question is whether the feature-enhanced model or the base model provides better embeddings for the k-means model - I operated under the assumption that the feature-enhanced model generates more "sensible" neighbourhoods by including style and brewery data, but perhaps the base model is more capable of generating "serendipitous" recommendations. It would be worth exploring this question.
