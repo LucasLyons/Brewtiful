@@ -268,4 +268,4 @@ Everything is open source. Feel free to check out the codebase [here](https://gi
 
 ---
 
-*Want to dive deeper? Check out the [Jupyter notebook on LightFM model training](#).*
+*Want to dive deeper? Check out the [Jupyter notebook on LightFM model training](https://github.com/LucasLyons/Brewtiful/tree/main/brewtiful-fm-demo).*
