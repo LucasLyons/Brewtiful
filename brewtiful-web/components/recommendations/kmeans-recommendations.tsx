@@ -204,7 +204,7 @@ export function KMeansRecommendations({
 
   // Effect 1: Compute clusters and fetch candidates once with caching
   useEffect(() => {
-    const K_RANGE = [1, 2, 5, 7, 10, 15];
+    const K_RANGE = [1, 2, 3, 4, 5, 7, 10, 15];
     const BEERS_PER_CENTROID = 72; // 3 pages of 24 items for performance
     async function computeClusters() {
       setIsLoading(true);
