@@ -11,14 +11,47 @@ import "./globals.css";
 
 export const dynamic = 'force-dynamic'
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Brewtiful | Beer Recs on Tap!",
+  metadataBase: new URL("https://brewtifulapp.com"),
+  title: {
+    default: "Brewtiful | Beer Recs on Tap!",
+    template: "%s | Brewtiful"
+  },
   description: "Brewtiful is an ML-powered beer recommendation app, serving up styles you'll be sure to love.",
+  keywords: ["beer recommendations", "craft beer", "beer discovery", "ML beer recommendations", "beer app"],
+  authors: [{ name: "Lucas Lyons", url: "https://lucaslyons.github.io/" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://brewtifulapp.com",
+    siteName: "Brewtiful",
+    title: "Brewtiful | Beer Recs on Tap!",
+    description: "Brewtiful is an ML-powered beer recommendation app, serving up styles you'll be sure to love.",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 600,
+        alt: "Brewtiful - Beer Recommendations"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Brewtiful | Beer Recs on Tap!",
+    description: "Brewtiful is an ML-powered beer recommendation app, serving up styles you'll be sure to love.",
+    images: ["/twitter-image.png"]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true
+    }
+  }
 };
 
 const geistSans = Geist({
@@ -32,9 +65,28 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Brewtiful',
+    description: 'ML-powered beer recommendation app serving up styles you\'ll be sure to love.',
+    url: 'https://brewtifulapp.com',
+    author: {
+      '@type': 'Person',
+      name: 'Lucas Lyons',
+      url: 'https://lucaslyons.github.io/'
+    }
+  };
+
   return (
 
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
           attribute="class"
