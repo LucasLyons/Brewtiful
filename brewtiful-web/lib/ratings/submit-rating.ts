@@ -1,10 +1,6 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import {
-  updateUserEmbeddingOnRate,
-  updateUserEmbeddingOnUnrate
-} from '@/lib/embeddings/user-embedding-update'
 
 export interface SubmitRatingParams {
   beerId: number
@@ -67,7 +63,7 @@ export async function submitRating({
         rating
       },
       {
-        onConflict: 'user_id,beer_id,brewery_id'
+        onConflict: 'user_id,beer_id'
       }
     )
     .select()
@@ -97,14 +93,6 @@ export async function submitRating({
     // Don't throw - rating was saved, event logging is secondary
   }
 
-  // Update user embedding based on the rating
-  try {
-    await updateUserEmbeddingOnRate(userId, beerId, rating)
-  } catch (embeddingError) {
-    console.error('Error updating user embedding:', embeddingError)
-    // Don't throw - rating was saved, embedding update is secondary
-  }
-
   return ratingData
 }
 
@@ -122,14 +110,6 @@ export async function removeRating({
 }: Omit<SubmitRatingParams, 'rating'>) {
   const supabase = createClient()
 
-  // Update user embedding BEFORE deleting the rating
-  // (we need the rating value to calculate the weight)
-  try {
-    await updateUserEmbeddingOnUnrate(userId, beerId)
-  } catch (embeddingError) {
-    console.error('Error updating user embedding on unrate:', embeddingError)
-    // Don't throw - we still want to delete the rating
-  }
 
   // Delete rating for authenticated user
   const { error: deleteError } = await supabase

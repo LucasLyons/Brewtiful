@@ -26,8 +26,3 @@ export {
   toSqlVector,
   fromSqlVector
 } from './vector-math'
-
-export {
-  updateUserEmbeddingOnRate,
-  updateUserEmbeddingOnUnrate
-} from './user-embedding-update'
