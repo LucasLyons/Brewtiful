@@ -196,7 +196,8 @@ export function weightedKMeans(
 
   // Initialize centroids using k-means++
   let centroids = initializeCentroids(beers, k, rng);
-  let assignments = new Array(beers.length).fill(0);
+  // Start unassigned so the first iteration always computes weighted centroids.
+  let assignments = new Array(beers.length).fill(-1);
 
   for (let iter = 0; iter < maxIterations; iter++) {
     // Assign each beer to nearest centroid
